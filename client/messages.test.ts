@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { messages } from './messages';
 
-describe('landing localization', () => {
+describe('localization dictionaries', () => {
   it('has matching English and Arabic message keys', () => {
     expect(Object.keys(messages.ar).sort()).toEqual(Object.keys(messages.en).sort());
   });

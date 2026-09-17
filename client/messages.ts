@@ -1,5 +1,6 @@
 export const messages = {
   en: {
+    // Landing page.
     skip: 'Skip to content', nav: 'Explore the scenarios', language: 'العربية',
     eyebrow: 'A first step into real work', title: 'Build experience.\nShow your thinking.',
     intro: 'Step into a fictional company, investigate a practical challenge, and explain the decisions behind your work. Evidence matters more than a certificate.',
@@ -21,8 +22,34 @@ export const messages = {
     step3: 'Make your work visible', step3Text: 'Submit your approach and results. The planned evidence record connects your work to feedback.',
     principle: 'Your work, not an AI shortcut.', principleText: 'AI review and skill coaching are planned after submission. They will help you reflect—not complete the assignment for you.',
     footer: 'WorkSim · Practical experience, visible evidence.',
+    // App shell.
+    loading: 'Checking your session…',
+    dashboard: 'Dashboard', login: 'Sign in', register: 'Sign up', logout: 'Log out',
+    // Roles (server codes are uppercase; shown localized with the raw code as fallback).
+    roleLearner: 'Learner', roleMentor: 'Mentor', roleEmployer: 'Employer', roleAdmin: 'Administrator',
+    // Auth forms.
+    email: 'Email', password: 'Password', name: 'Full name', working: 'Working…',
+    loginTitle: 'Sign in', loginSubtitle: 'Welcome back. Pick up where you left off.',
+    loginAction: 'Sign in', noAccount: 'New to WorkSim?',
+    registerTitle: 'Create your account', registerSubtitle: 'Join WorkSim and start collecting evidence of real work.',
+    registerAction: 'Create account', haveAccount: 'Already have an account?',
+    passwordHint: 'At least 8 characters.', languageLabel: 'Preferred language', langEnglish: 'English', langArabic: 'العربية',
+    demoHint: 'Demo accounts: learner@worksim.dev, mentor@worksim.dev, employer@worksim.dev, admin@worksim.dev — password: Worksim-demo-1',
+    // Dashboard.
+    dashboardTitle: 'Your workspace', dashboardGreeting: 'Welcome back,',
+    dashboardEmptyTitle: 'The simulation catalog is being built',
+    dashboardEmptyText: 'Two complete work scenarios are coming to this space: a NovaShop frontend task and a MarketFlow data analysis. You will work inside a realistic company context, submit your results, and receive structured feedback.',
+    dashboardEvidenceNote: 'Every completed simulation will add to your work evidence — the record of what you did, how you did it, and the feedback you received.',
+    // Error and empty states.
+    notFoundText: 'This page does not exist.', notFoundAction: 'Back to home',
+    errorNetwork: 'Cannot reach the server. Check your connection and try again.',
+    errorInvalidCredentials: 'Email or password is incorrect.',
+    errorEmailTaken: 'An account with this email already exists.',
+    errorValidation: 'Please review the entered values and try again.',
+    errorUnknown: 'Something went wrong. Please try again.',
   },
   ar: {
+    // صفحة الهبوط.
     skip: 'انتقل إلى المحتوى', nav: 'استكشف السيناريوهات', language: 'English',
     eyebrow: 'خطوتك الأولى نحو تجربة عمل واقعية', title: 'ابنِ خبرتك.\nوأظهر طريقة تفكيرك.',
     intro: 'انضم إلى شركة خيالية، وحقق في تحدٍ عملي، واشرح القرارات التي اتخذتها. الدليل على عملك أهم من الشهادة.',
@@ -44,6 +71,31 @@ export const messages = {
     step3: 'أظهر ما أنجزته', step3Text: 'قدّم منهجك ونتائجك. سيربط سجل الأدلة المخطط له عملك بالملاحظات.',
     principle: 'عملك أنت، وليس اختصارًا بالذكاء الاصطناعي.', principleText: 'نخطط لمراجعة العمل والإرشاد المهني بالذكاء الاصطناعي بعد التسليم، لمساعدتك على التعلم لا لتنفيذ المهمة بدلًا منك.',
     footer: 'WorkSim · خبرة عملية وأدلة واضحة.',
+    // هيكل التطبيق.
+    loading: 'جارٍ التحقق من جلستك…',
+    dashboard: 'لوحتي', login: 'تسجيل الدخول', register: 'إنشاء حساب', logout: 'تسجيل الخروج',
+    // الأدوار.
+    roleLearner: 'متعلم', roleMentor: 'مرشد', roleEmployer: 'صاحب عمل', roleAdmin: 'مدير المنصة',
+    // نماذج الحساب.
+    email: 'البريد الإلكتروني', password: 'كلمة المرور', name: 'الاسم الكامل', working: 'جارٍ التنفيذ…',
+    loginTitle: 'تسجيل الدخول', loginSubtitle: 'أهلًا بعودتك. تابع من حيث توقفت.',
+    loginAction: 'تسجيل الدخول', noAccount: 'أول مرة في WorkSim؟',
+    registerTitle: 'أنشئ حسابك', registerSubtitle: 'انضم إلى WorkSim وابدأ ببناء أدلة على عمل حقيقي.',
+    registerAction: 'إنشاء الحساب', haveAccount: 'لديك حساب بالفعل؟',
+    passwordHint: 'ثمانية أحرف على الأقل.', languageLabel: 'اللغة المفضلة', langEnglish: 'الإنجليزية', langArabic: 'العربية',
+    demoHint: 'حسابات تجريبية: learner@worksim.dev و mentor@worksim.dev و employer@worksim.dev و admin@worksim.dev — كلمة المرور: Worksim-demo-1',
+    // لوحة المتعلم.
+    dashboardTitle: 'مساحتك', dashboardGreeting: 'أهلًا بعودتك،',
+    dashboardEmptyTitle: 'كتالوج المحاكاات قيد الإعداد',
+    dashboardEmptyText: 'سيصلك هنا سيناريو عملان كاملان: مهمة واجهات أمامية من NovaShop وتحليل بيانات من MarketFlow. ستعمل داخل سياق شركة واقعي، وتسلّم نتائجك، وتتلقى ملاحظات منظمة.',
+    dashboardEvidenceNote: 'كل محاكاة تكملها ستُضاف إلى سجل أدلة عملك — سجل ما فعلته، وكيف فعلته، والملاحظات التي تلقيتها.',
+    // حالات الخطأ والفراغ.
+    notFoundText: 'هذه الصفحة غير موجودة.', notFoundAction: 'العودة إلى الرئيسية',
+    errorNetwork: 'تعذر الاتصال بالخادم. تحقق من اتصالك وحاول مجددًا.',
+    errorInvalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+    errorEmailTaken: 'هناك حساب مسجل بهذا البريد الإلكتروني بالفعل.',
+    errorValidation: 'يرجى مراجعة القيم المدخلة والمحاولة مرة أخرى.',
+    errorUnknown: 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
   },
 } as const;
 export type Locale = keyof typeof messages;
