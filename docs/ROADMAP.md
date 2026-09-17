@@ -8,11 +8,11 @@ Never infer completion from a scaffold or mock response. Update this file after 
 - [x] Verify Node 22.20.0, npm 10.9.3, Git 2.51.0.
 - [x] Define architecture, data/API boundaries, two scenarios, AI boundaries, and phased plan.
 - [x] Initialize Git on main; no remote supplied.
-- [ ] Configure user-approved Git author identity and create first verified commit.
+- [x] Configure user-approved Git author identity and create first verified commit.
 
 ## Phases and exit gates
 
-1. **Foundation (in progress).** Buildable React/Express scaffold, local configuration, safe errors, base bilingual UI. Next: Prisma schema/migrations, sessions/password hashing, role and ownership checks, registration/login/logout, CSRF and rate limits, auth integration tests. Commit scaffold separately from auth/database.
+1. **Foundation (complete — see verified checkpoint below).** Buildable React/Express scaffold; full product schema with migration history; scrypt password hashing; DB-backed sessions in HttpOnly cookies; role authorization middleware; rate-limited register/login/logout; integration and authorization tests; React Router client with auth context and learner dashboard; demo seed. Ownership checks belong to the attempt/submission phase; explicit CSRF review is scheduled with security work in the quality phase.
 2. **Learner core.** Catalog/details/dashboard, content versioning, start/resume attempts, materials, draft save, atomic final submission. Test ownership, concurrent saves, double submit, missing/disabled simulations.
 3. **NovaShop.** Complete bilingual bug brief/source/reference materials, realistic manager update at a documented milestone, decision log, patch proposal/test-plan submission, explainable rubric. Do not run submitted code.
 4. **MarketFlow.** Complete bilingual brief and synthetic CSV with verified totals, data dictionary, calculations, findings, recommendations, limitations. Test expected metric calculations and sensible tolerances. Both scenarios fully playable.
@@ -28,7 +28,7 @@ Never infer completion from a scaffold or mock response. Update this file after 
 ## Final assessment checklist (not yet satisfied)
 
 - [ ] Full platform runs locally and learner journey works end to end.
-- [ ] Register/login/logout with secure sessions and hashed passwords.
+- [x] Register/login/logout with secure sessions and hashed passwords.
 - [ ] Browse/search/detail/start/resume/save/submission workflows.
 - [ ] Two complete, realistic simulations for different roles.
 - [ ] At least one connected dynamic requirement change.
@@ -62,6 +62,14 @@ Never infer completion from a scaffold or mock response. Update this file after 
 - A disk-full error interrupted an earlier install attempt. Latest measured available space: 168 MiB. Free adequate disk space before database/browser dependency installation; no personal files or shared caches were deleted.
 - Git ignores local env files, databases, dependencies and build output. Git is on main without commits: author identity is not configured. No remote was supplied.
 - Browser rendering, mobile layout, actual language switching and accessibility are not yet verified; translation tests only establish key parity and nonempty strings.
+
+## Verified foundation checkpoint — 2026-09-17 (Phase 1)
+
+- Data layer: complete product schema (users/sessions, simulations, tasks, materials, events, attempts, submissions, evaluations, AI feedback, skills, mentor reviews, employer sharing) committed with a reproducible migration; `prisma migrate status` clean; `db:seed` created the four demo accounts.
+- Auth: register/login/logout/me with Zod validation, Node-built-in scrypt hashing, sessions stored as SHA-256 token hashes and referenced by an HttpOnly cookie, generic credential errors, login rate limiting with Retry-After, requireAuth/requireRole middleware. Public registration always creates learners; staff roles come from the seed only.
+- Client: React Router shell, locale provider with RTL/LTR switching, auth context, landing/login/register/dashboard/not-found pages, EN/AR dictionary with key-parity and non-empty tests, API-code-to-message mapping for form errors.
+- Verification: `npm run check` green (ESLint zero warnings, 19 tests, three-project typecheck, client+server build). Live E2E against the production build: seeded login 200, `/me` 200 with cookie, wrong password 401 `INVALID_CREDENTIALS`, cookieless `/me` 401. `scripts/smoke.mjs` passed.
+- Deferred with reasons: ownership checks arrive with attempts/submissions; email delivery and password reset are out of scope; explicit CSRF review is scheduled in the quality phase.
 
 ## Scope discipline
 
