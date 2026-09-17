@@ -71,6 +71,15 @@ Never infer completion from a scaffold or mock response. Update this file after 
 - Verification: `npm run check` green (ESLint zero warnings, 19 tests, three-project typecheck, client+server build). Live E2E against the production build: seeded login 200, `/me` 200 with cookie, wrong password 401 `INVALID_CREDENTIALS`, cookieless `/me` 401. `scripts/smoke.mjs` passed.
 - Deferred with reasons: ownership checks arrive with attempts/submissions; email delivery and password reset are out of scope; explicit CSRF review is scheduled in the quality phase.
 
+## Phase 2 checkpoint — bilingual material persistence
+
+- Added a second migration; the applied foundation migration remains unchanged. `SimulationMaterial.content` becomes `contentEn` and `contentAr`.
+- Existing text is copied to both columns to prevent data loss. This is a legacy fallback, NOT an Arabic translation; scenario seed content must author both narrative languages.
+- An isolated upgrade test applies the original migration, inserts an existing material, applies the new migration, and verifies exact text, ordering, relationships, foreign-key integrity and cascade deletion.
+- Verified: schema validation; 20 tests; lint; typecheck; production build and HTTP smoke. Local migration deployment and client generation succeeded; database-to-schema diff reports no difference. No development database reset was used.
+- Build still reports a 509 kB client-chunk warning; optimization remains outstanding.
+- The evaluation module is an uncommitted draft, not yet integrated or covered by dedicated tests. Catalog, attempts, submissions and playable simulations remain incomplete; this checkpoint does not close Phase 2.
+
 ## Scope discipline
 
 No payments, social network, chat system, recruitment integration, autonomous AI worker, or arbitrary code execution. Text/code proposals and supplied CSV materials are sufficient for the assessment. If uploads are later justified, implement size/type/storage validation first. Email delivery/password recovery are outside the initial scope and must not be implied to exist.

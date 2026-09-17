@@ -106,8 +106,9 @@ model SimulationTask {
 }
 
 /// Reference material the learner receives "on their desk" (bug report,
-/// dataset, source code, screenshots, acceptance criteria...). Stored as text
-/// so it renders directly in the workspace; no file storage is needed.
+/// dataset, source code, screenshots, acceptance criteria). Narrative content
+/// is bilingual (contentEn/contentAr); technical artifacts such as code and
+/// datasets are language-neutral, so both columns hold the same payload there.
 model SimulationMaterial {
   id           String     @id @default(cuid())
   simulationId String
@@ -115,11 +116,13 @@ model SimulationMaterial {
   kind         String     // BRIEF | BUG_REPORT | REQUIREMENTS | CODE | DATASET | MESSAGE | SCREENSHOT
   titleEn      String
   titleAr      String
-  content      String
+  contentEn    String
+  contentAr    String
   order        Int
 
   @@index([simulationId])
 }
+
 /// A timed, scenario-specific message delivered during a running attempt
 /// (for example a manager message that changes the requirement). Events are
 /// authored per simulation; delivery is computed by the server from
