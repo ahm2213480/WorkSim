@@ -1,3 +1,4 @@
+import './test-env.js'; // Must stay first: pins the test environment before any config is read.
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
