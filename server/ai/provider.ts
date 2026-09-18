@@ -7,10 +7,10 @@ import { getEnv } from '../env.js';
  *  JSON schema is the entire abstraction. No agents, no streaming, no retries
  *  inside the provider: the features own their own retry/fallback semantics.
  *
- *  Provider: any OpenAI-compatible Chat Completions endpoint (the assessment
- *  environment exposes one through OPENAI_BASE_URL / OPENAI_API_KEY /
- *  OPENAI_MODEL). Raw `fetch` — no SDK dependency, easy to explain, and the
- *  failure modes (timeout, non-JSON, error envelope) are explicit below. */
+ *  Provider: Gemini through its OpenAI-compatible Chat Completions endpoint
+ *  (configured through AI_BASE_URL / AI_API_KEY / AI_MODEL). Raw `fetch` — no
+ *  SDK dependency, easy to explain, and the failure modes (timeout, non-JSON,
+ *  error envelope) are explicit below. */
 
 export interface AiCompletion {
   content: string;
@@ -22,7 +22,7 @@ export interface AiProvider {
    *  provider cannot be reached or refuses the request. Never throws other
    *  error types, so callers only handle one failure shape. */
   complete(system: string, user: string, maxOutputChars: number): Promise<AiCompletion>;
-  /** Human-readable name for storage metadata (e.g. "openai:gpt-4o-mini"). */
+  /** Human-readable name for storage metadata (e.g. "gemini:gemini-2.0-flash"). */
   describe(): string;
 }
 
@@ -42,8 +42,10 @@ const responseSchema = z.object({
   choices: z.array(z.object({ message: z.object({ content: z.string() }).passthrough() }).passthrough()).min(1),
 }).passthrough();
 
-/** OpenAI-compatible provider over plain fetch. */
-export class OpenAiCompatibleProvider implements AiProvider {
+/** Gemini provider over plain fetch, using Gemini's OpenAI-compatible Chat
+ *  Completions endpoint. No SDK: the request shape and every failure mode are
+ *  explicit below, which is what makes this explainable in an interview. */
+export class GeminiProvider implements AiProvider {
   constructor(
     private readonly baseUrl: string,
     private readonly apiKey: string,
@@ -52,8 +54,8 @@ export class OpenAiCompatibleProvider implements AiProvider {
   ) {}
 
   describe(): string {
-    return `openai-compatible:${this.model}`;
-    }
+    return `gemini:${this.model}`;
+  }
 
   async complete(system: string, user: string, maxOutputChars: number): Promise<AiCompletion> {
     const controller = new AbortController();
@@ -65,9 +67,9 @@ export class OpenAiCompatibleProvider implements AiProvider {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
         body: JSON.stringify({
           model: this.model,
-          // Structured output where the provider supports it; the prompt also
-          // restates the JSON shape, so validation does not depend on it.
-          response_format: { type: 'json_object' },
+          // No `response_format` here: Gemini's endpoint rejects it, while others
+          // ignore it. The prompt itself demands the JSON shape and the caller
+          // validates the result.
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
@@ -114,5 +116,5 @@ export function defaultProvider(): AiProvider {
       complete: async () => { throw new AiUnavailableError('AI_NOT_CONFIGURED', 'No AI provider is configured.'); },
     };
   }
-  return new OpenAiCompatibleProvider(env.AI_BASE_URL, env.AI_API_KEY, env.AI_MODEL, env.AI_TIMEOUT_MS);
+  return new GeminiProvider(env.AI_BASE_URL, env.AI_API_KEY, env.AI_MODEL, env.AI_TIMEOUT_MS);
 }

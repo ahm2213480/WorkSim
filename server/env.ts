@@ -15,8 +15,8 @@ const schema = z.object({
   // AI provider (optional): without a key the platform stays fully functional
   // and AI features surface a clear "unavailable" state instead of failing.
   AI_API_KEY: z.string().min(1).optional(),
-  AI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
-  AI_MODEL: z.string().min(1).default('gpt-4o-mini'),
+  AI_BASE_URL: z.string().url().default('https://generativelanguage.googleapis.com/v1beta/openai'),
+  AI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
   AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(30000),
 });
 
