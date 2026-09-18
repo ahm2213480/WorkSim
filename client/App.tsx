@@ -2,11 +2,15 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate 
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth';
 import { LocaleProvider, useLocale } from './locale';
+import { Catalog } from './pages/Catalog';
 import { Dashboard } from './pages/Dashboard';
+import { EvidencePage } from './pages/Evidence';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { NotFound } from './pages/NotFound';
 import { Register } from './pages/Register';
+import { SimulationDetail } from './pages/SimulationDetail';
+import { Workspace } from './pages/Workspace';
 
 /** Gate for signed-in pages. While the session is being checked it shows a
  *  loading state (no login-form flash), and the requested path is forwarded so
@@ -33,6 +37,7 @@ function AppHeader() {
         {user ? (
           <>
             <Link className="nav-link" to="/dashboard">{t.dashboard}</Link>
+            <Link className="nav-link" to="/simulations">{t.catalog}</Link>
             <button className="language" onClick={() => { void logout().finally(() => navigate('/')); }}>{t.logout}</button>
           </>
         ) : (
@@ -57,7 +62,11 @@ function Shell() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/simulations" element={<Catalog />} />
+        <Route path="/simulations/:slug" element={<SimulationDetail />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/workspace/:attemptId" element={<RequireAuth><Workspace /></RequireAuth>} />
+        <Route path="/evidence/:submissionId" element={<RequireAuth><EvidencePage /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </main>
