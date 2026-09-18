@@ -5,6 +5,7 @@ import type { Locale } from '../locale.js';
 import { buildEvidence, type SubmissionContext } from '../submissions/view.js';
 import { loadEvidence } from '../submissions/service.js';
 import type { AiProvider } from './provider.js';
+import { parseAiJson } from './parse.js';
 import { REVIEW_MAX_OUTPUT_CHARS, REVIEW_PROMPT_VERSION, reviewSchema, type ReviewFeedback } from './schemas.js';
 import { REVIEW_SYSTEM_PROMPT } from './prompts.js';
 
@@ -30,7 +31,10 @@ function inputHash(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
 
-function parseJson(text: string): unknown {
+/** Stored rows are written by this server (`JSON.stringify` of a validated
+ *  object), so they only ever need a plain read — model output goes through
+ *  the tolerant `parseAiJson` below. */
+function readStoredJson(text: string): unknown {
   try {
     return JSON.parse(text) as unknown;
   } catch {
@@ -82,7 +86,7 @@ export async function readStoredReview(submissionId: string, locale: Locale): Pr
   }
   // A stored READY row whose JSON no longer parses degrades to unavailable:
   // reads must never crash because of legacy or corrupt data.
-  const parsed = reviewSchema.safeParse(parseJson(row.feedbackJson ?? 'null'));
+  const parsed = reviewSchema.safeParse(readStoredJson(row.feedbackJson ?? 'null'));
   if (!parsed.success) return unavailable<ReviewFeedback>('AI_INVALID_RESPONSE', { model: row.model, completedAt: row.completedAt });
   return ready(parsed.data, row.model ?? 'unknown', row.completedAt ?? row.requestedAt);
 }
@@ -117,7 +121,10 @@ export async function reviewSubmission(submissionId: string, userId: string, loc
 
   try {
     const completion = await provider.complete(REVIEW_SYSTEM_PROMPT, userPrompt, REVIEW_MAX_OUTPUT_CHARS);
-    const parsed = reviewSchema.safeParse(parseJson(completion.content));
+    // `parseAiJson` normalizes the model's markdown-fence habit before the
+    // schema validates it. Nothing is trusted: an answer that still does not
+    // match is recorded as unavailable, never stored as feedback.
+    const parsed = reviewSchema.safeParse(parseAiJson(completion.content));
     if (!parsed.success) {
       await prisma.aIFeedback.update({
         where: { id: row.id },

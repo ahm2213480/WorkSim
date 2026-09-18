@@ -2,6 +2,7 @@ import { prisma } from '../db.js';
 import type { Locale } from '../locale.js';
 import { pick } from '../simulations/view.js';
 import type { AiProvider } from './provider.js';
+import { parseAiJson } from './parse.js';
 import { COACH_MAX_OUTPUT_CHARS, COACH_PROMPT_VERSION, coachSchema, type CoachFeedback } from './schemas.js';
 import { COACH_SYSTEM_PROMPT } from './prompts.js';
 import type { StoredFeedback } from './reviewer.js';
@@ -171,7 +172,7 @@ export async function coachLearner(userId: string, locale: Locale, provider: AiP
 
   try {
     const completion = await provider.complete(COACH_SYSTEM_PROMPT, userPrompt, COACH_MAX_OUTPUT_CHARS);
-    const parsed = coachSchema.safeParse(JSON.parse(completion.content));
+    const parsed = coachSchema.safeParse(parseAiJson(completion.content));
     const availableSlugs = new Set(evidence.catalog.map((entry) => entry.slug));
     if (!parsed.success || !availableSlugs.has(parsed.data.recommended_next_simulation)) {
       // Unknown slug or malformed JSON: the recommendation cannot be trusted,

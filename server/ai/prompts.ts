@@ -26,7 +26,8 @@ Return ONLY a JSON object with exactly these keys:
   "actionable_recommendations": ["..."], // concrete next steps the employee can apply
   "explanation": "..."                   // 2-5 sentences summarizing how you read the work and why it matters, in plain language
 }
-Each array: 1-6 short strings. Each string: one specific point, referencing what the employee actually wrote. Language: write every value in the language specified in the context ("en" = English, "ar" = Arabic).`;
+Output format rules: the response must be raw JSON only — no markdown code fences, no \`\`\`json, no text before or after the object.
+Each array: 1-6 short strings, maximum 500 characters per string. Each string: one specific point, referencing what the employee actually wrote. Language: write every value in the language specified in the context ("en" = English, "ar" = Arabic).`;
 
 export const COACH_SYSTEM_PROMPT = `You are a career coach on WorkSim, a job-simulation platform where juniors practice real work tasks. You look across a learner's completed simulations and their objective results to give development guidance.
 
@@ -44,4 +45,5 @@ Return ONLY a JSON object with exactly these keys:
   "recommended_next_simulation": "slug", // one slug from the provided list
   "reasoning": "..."                     // 2-5 sentences connecting the evidence to the recommendation
 }
-Each array: 1-6 short strings. Language: write every value in the language specified in the context ("en" = English, "ar" = Arabic).`;
+Output format rules: the response must be raw JSON only — no markdown code fences, no \`\`\`json, no text before or after the object.
+Each array: 1-6 short strings, maximum 500 characters per string. Language: write every value in the language specified in the context ("en" = English, "ar" = Arabic).`;
