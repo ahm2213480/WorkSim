@@ -13,7 +13,7 @@ Never infer completion from a scaffold or mock response. Update this file after 
 ## Phases and exit gates
 
 1. **Foundation (complete — see verified checkpoint below).** Buildable React/Express scaffold; full product schema with migration history; scrypt password hashing; DB-backed sessions in HttpOnly cookies; role authorization middleware; rate-limited register/login/logout; integration and authorization tests; React Router client with auth context and learner dashboard; demo seed. Ownership checks belong to the attempt/submission phase; explicit CSRF review is scheduled with security work in the quality phase.
-2. **Learner core.** Catalog/details/dashboard, content versioning, start/resume attempts, materials, draft save, atomic final submission. Test ownership, concurrent saves, double submit, missing/disabled simulations.
+2. **Learner core (complete — see verified checkpoint below).** Catalog/details/dashboard, frozen task snapshots, start/resume attempts, clock-delivered events, materials, draft save, atomic final submission. Ownership, double submit, missing simulations and incomplete submissions are covered by integration tests.
 3. **NovaShop.** Complete bilingual bug brief/source/reference materials, realistic manager update at a documented milestone, decision log, patch proposal/test-plan submission, explainable rubric. Do not run submitted code.
 4. **MarketFlow.** Complete bilingual brief and synthetic CSV with verified totals, data dictionary, calculations, findings, recommendations, limitations. Test expected metric calculations and sensible tolerances. Both scenarios fully playable.
 5. **AI.** Actual provider adapter, structured reviewer and coach, server schema validation, careful prompts, evidence-version caches, input/output/token/call bounds. Test unavailable key, malformed output, timeout, API failure and rate limits. Live provider verification is distinct from test doubles.
@@ -27,18 +27,18 @@ Never infer completion from a scaffold or mock response. Update this file after 
 
 ## Final assessment checklist (not yet satisfied)
 
-- [ ] Full platform runs locally and learner journey works end to end.
+- [x] Full platform runs locally and learner journey works end to end (API-level integration tests; browser walkthrough due in the mobile/RTL phases).
 - [x] Register/login/logout with secure sessions and hashed passwords.
-- [ ] Browse/search/detail/start/resume/save/submission workflows.
-- [ ] Two complete, realistic simulations for different roles.
-- [ ] At least one connected dynamic requirement change.
-- [ ] Explainable deterministic evaluation; presence is not correctness.
+- [x] Browse/search/detail/start/resume/save/submission workflows.
+- [x] Two complete, realistic simulations for different roles.
+- [x] At least one connected dynamic requirement change (both simulations have one; event-gated rubric criteria).
+- [x] Explainable deterministic evaluation; presence is not correctness.
 - [ ] AI submission reviewer works with a real provider.
 - [ ] AI skill coach works with a real provider.
 - [ ] Both AI features have tested safe failure behavior; never do learner work.
 - [ ] AI prompts, validation, advisory limits, caching and costs documented.
 - [ ] Non-AI decisions documented against actual implementation.
-- [ ] Evidence includes work, reasoning, problem handling, skills, and feedback.
+- [x] Evidence includes work, reasoning, problem handling, skills, and feedback (skills and event timeline live; human/AI feedback arrive with phases 5–6).
 - [ ] Mentor workflow and human feedback.
 - [ ] Employer evidence workflow with server-enforced sharing consent.
 - [ ] Admin create/edit/material management/activate/deactivate.
@@ -78,7 +78,18 @@ Never infer completion from a scaffold or mock response. Update this file after 
 - An isolated upgrade test applies the original migration, inserts an existing material, applies the new migration, and verifies exact text, ordering, relationships, foreign-key integrity and cascade deletion.
 - Verified: schema validation; 20 tests; lint; typecheck; production build and HTTP smoke. Local migration deployment and client generation succeeded; database-to-schema diff reports no difference. No development database reset was used.
 - Build still reports a 509 kB client-chunk warning; optimization remains outstanding.
-- The evaluation module is an uncommitted draft, not yet integrated or covered by dedicated tests. Catalog, attempts, submissions and playable simulations remain incomplete; this checkpoint does not close Phase 2.
+- The evaluation module was an uncommitted draft at this point; it has since been completed and verified in the learner-core checkpoint below.
+
+## Verified learner-core checkpoint — 2026-09-18 (Phase 2 complete)
+
+- **Deterministic evaluation engine** (`server/evaluation/rubric.ts`, 7 unit tests): objective per-field checks (nonEmpty, minLength, includesAny/All with Arabic signal words, hasNumber); event-gated criteria are skipped and excluded from the maximum, so a learner is never scored on a requirement that never reached them; every criterion carries machine-checkable evidence text in the stored result.
+- **Bilingual simulation catalog in code** (`server/simulations/`): NovaShop (frontend debugging) and MarketFlow (sales-decline analysis), each with 3–4 realistic materials, 2 timed in-simulation events (each simulation includes one connected requirement change: guest-checkout scope addition; quantified-recovery request), one task with explicit submission fields and a rubric totaling 100. Synced idempotently by `syncCatalog()` — the same path used by seed and tests.
+- **Learner-core API**: public localized catalog + detail; `POST /simulations/:idOrSlug/start` is idempotent (resume, not duplicate); attempt workspace serves the **frozen task snapshot** and clock-delivered events exactly once (`AttemptEvent` ledger); draft PATCH validates against the task's own field schema (unknown keys dropped, 20k cap, required-field errors by code); submit is transactional and single-shot (409 on retry), evaluates deterministically, writes submission + evaluation + demonstrated skills (only when their rubric criterion was met, each with a stored basis) in one transaction.
+- **Evidence**: submissions endpoint returns localized work, per-criterion evaluation (including `skipReason`), skills with basis, and the **timeline of delivered events** — the "how did they handle change" record.
+- **Authorization**: attempts/submissions queries are scoped by `userId` in the query itself; stranger reads a foreign attempt or submission → 404 (no existence leak); anonymous → 401. Covered by integration tests.
+- **Client**: catalog with search + skill filter, simulation detail with brief/materials, workspace (autosaved debounced drafts with save-state indicator, polling inbox that merges only server-owned state, client-side required-field guard, confirm-then-submit), evidence page (score, criteria with evidence, skills, timeline, disclaimer), dashboard with in-progress/completed lists. All pages bilingual; state uses a load-key pattern to satisfy the strict react-hooks lint rules without resetting state inside effects.
+- **Verification**: `npm run check` green — ESLint zero warnings, **40 tests** (16 auth/foundation + 7 rubric + material-migration + 13 learner-flow integration + dictionary/form-error parity), three-project typecheck, client+server build, production HTTP smoke passed. Rubric weights verified: NovaShop max 100; MarketFlow max 100 (weights normalized during this phase); event-skipped submission scores against max 90.
+- **Known deferrals**: bundle is 557 kB (React Router included) — chunk warning stands, code-splitting deferred; mobile and RTL need real-browser verification (scheduled phases 8–9); no AI yet (phase 5).
 
 ## Scope discipline
 
