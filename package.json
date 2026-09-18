@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx server/seed.ts",
+    "ai:check": "tsx scripts/ai-check.ts",
     "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint . --max-warnings 0",
