@@ -4,7 +4,7 @@ export const messages = {
     skip: 'Skip to content', nav: 'Explore the scenarios', language: 'العربية',
     eyebrow: 'A first step into real work', title: 'Build experience.\nShow your thinking.',
     intro: 'Step into a fictional company, investigate a practical challenge, and explain the decisions behind your work. Evidence matters more than a certificate.',
-    action: 'Meet your future assignments', status: 'Development preview · Assignments are not playable yet',
+    action: 'Meet your future assignments', status: 'Two simulations are playable now — sign in and start working',
     preview: 'Inside your next workday', company: 'NovaShop · Frontend team',
     manager: 'Maya Hassan · Engineering manager',
     message: 'Customers are getting stuck at checkout on mobile. Investigate the issue, propose a fix, and tell us how you would verify it.',
@@ -37,8 +37,8 @@ export const messages = {
     demoHint: 'Demo accounts: learner@worksim.dev, mentor@worksim.dev, employer@worksim.dev, admin@worksim.dev — password: Worksim-demo-1',
     // Dashboard.
     dashboardTitle: 'Your workspace', dashboardGreeting: 'Welcome back,',
-    dashboardEmptyTitle: 'The simulation catalog is being built',
-    dashboardEmptyText: 'Two complete work scenarios are coming to this space: a NovaShop frontend task and a MarketFlow data analysis. You will work inside a realistic company context, submit your results, and receive structured feedback.',
+    dashboardEmptyTitle: 'Your simulations live here',
+    dashboardEmptyText: 'Browse the catalog and start your first simulation: fix a mobile checkout at NovaShop, or investigate a sales decline at MarketFlow. Your work, evaluation and evidence build up as you go.',
     dashboardEvidenceNote: 'Every completed simulation will add to your work evidence — the record of what you did, how you did it, and the feedback you received.',
     // Simulation catalog.
     catalog: 'Simulations', catalogTitle: 'Simulation catalog',
@@ -92,7 +92,7 @@ export const messages = {
     skip: 'انتقل إلى المحتوى', nav: 'استكشف السيناريوهات', language: 'English',
     eyebrow: 'خطوتك الأولى نحو تجربة عمل واقعية', title: 'ابنِ خبرتك.\nوأظهر طريقة تفكيرك.',
     intro: 'انضم إلى شركة خيالية، وحقق في تحدٍ عملي، واشرح القرارات التي اتخذتها. الدليل على عملك أهم من الشهادة.',
-    action: 'تعرّف على مهامك القادمة', status: 'نسخة تطوير أولية · المهام غير متاحة للتنفيذ بعد',
+    action: 'تعرّف على مهامك القادمة', status: 'محاكااتان جاهزتان للتنفيذ الآن — سجّل الدخول وابدأ العمل',
     preview: 'لمحة عن يوم عملك القادم', company: 'NovaShop · فريق الواجهات الأمامية',
     manager: 'مايا حسن · مديرة الهندسة',
     message: 'يواجه العملاء مشكلة في إتمام الشراء على الجوال. تحقق من المشكلة، واقترح إصلاحًا، واشرح كيف ستختبره.',
@@ -125,8 +125,8 @@ export const messages = {
     demoHint: 'حسابات تجريبية: learner@worksim.dev و mentor@worksim.dev و employer@worksim.dev و admin@worksim.dev — كلمة المرور: Worksim-demo-1',
     // لوحة المتعلم.
     dashboardTitle: 'مساحتك', dashboardGreeting: 'أهلًا بعودتك،',
-    dashboardEmptyTitle: 'كتالوج المحاكاات قيد الإعداد',
-    dashboardEmptyText: 'سيصلك هنا سيناريو عملان كاملان: مهمة واجهات أمامية من NovaShop وتحليل بيانات من MarketFlow. ستعمل داخل سياق شركة واقعي، وتسلّم نتائجك، وتتلقى ملاحظات منظمة.',
+    dashboardEmptyTitle: 'محاكااتك تظهر هنا',
+    dashboardEmptyText: 'تصفّح الكتالوج وابدأ محاكاتك الأولى: أصلح صفحة الدفع في NovaShop، أو حقّق في انخفاض المبيعات في MarketFlow. سيتكوّن عملك وتقييمك ودليلك أثناء التقدّم.',
     dashboardEvidenceNote: 'كل محاكاة تكملها ستُضاف إلى سجل أدلة عملك — سجل ما فعلته، وكيف فعلته، والملاحظات التي تلقيتها.',
     // كتالوج المحاكاات.
     catalog: 'المحاكاات', catalogTitle: 'كتالوج المحاكاات',
