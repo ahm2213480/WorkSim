@@ -5,7 +5,8 @@ import { resolveLocale } from '../locale.js';
 import { routeParam } from '../params.js';
 import type { AiProvider } from './provider.js';
 import { coachLearner, readStoredCoachReport } from './coach.js';
-import { reviewSubmission } from './reviewer.js';
+import { readStoredReview, reviewSubmission } from './reviewer.js';
+import { loadOwnedSubmission } from '../submissions/service.js';
 
 /** How often one user may start an AI generation. The limiter exists for cost
  *  control, not security: generation is also naturally bounded by the
@@ -36,6 +37,14 @@ export function aiRouter(provider: AiProvider) {
     recent.push(now);
     hits.set(key, recent);
   }
+
+  router.get('/submissions/:id/ai-review', requireAuth, async (req, res) => {
+    const locale = resolveLocale(req.query.locale);
+    // Read-only: only the cached row is returned and ownership is enforced by
+    // the same query the write path uses.
+    const submission = await loadOwnedSubmission(routeParam(req, 'id'), req.user!.id);
+    res.json({ review: await readStoredReview(submission.id, locale) });
+  });
 
   router.post('/submissions/:id/ai-review', requireAuth, async (req, res) => {
     const locale = resolveLocale(req.query.locale);
