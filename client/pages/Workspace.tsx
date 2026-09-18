@@ -122,7 +122,7 @@ export function Workspace() {
     try {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       const { submissionId } = await submitAttempt(attempt.id, draft, locale);
-      navigate(`/evidence/${submissionId}`);
+      navigate(`/evidence/${submissionId}?ai=1`);
     } catch (error) {
       setSubmitError(error instanceof ApiError ? error.message : t.errorUnknown);
       setSubmitting(false);

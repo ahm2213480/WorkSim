@@ -1,7 +1,81 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { AdviceList } from './advice';
 import { useLocale } from '../locale';
-import { getSubmission, type Evidence } from '../simulations';
+import { generateReview, getSubmission, readReview, type Evidence, type ReviewFeedback, type StoredAiFeedback } from '../simulations';
+
+/** Feature A UI. The deterministic evaluation above is the score of record;
+ *  this section is advisory only, and its failure states never block access to
+ *  the saved submission. Generation happens on explicit request (or once via
+ *  the ?ai=1 handoff right after submitting) and is cached server-side. */
+function AiReviewSection({ submissionId }: { submissionId: string }) {
+  const { t, locale } = useLocale();
+  const [review, setReview] = useState<StoredAiFeedback<ReviewFeedback> | null>(null);
+  const [pending, setPending] = useState(true); // The cached read is in flight on mount.
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    let active = true;
+    // Cached read first (no provider call); then, only when the learner just
+    // submitted (?ai=1), generate immediately so the feedback is ready here.
+    readReview(submissionId, locale)
+      .then(async (data) => {
+        if (!active) return;
+        if (data.review) setReview(data.review);
+        else if (searchParams.get('ai') === '1') {
+          setPending(true);
+          const generated = await generateReview(submissionId, locale);
+          if (active) setReview(generated.review);
+        }
+      })
+      .catch(() => { /* reads degrade to the generate button below */ })
+      .finally(() => { if (active) setPending(false); });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- searchParams is read once per mount
+  }, [submissionId, locale]);
+
+  async function handleGenerate() {
+    setPending(true);
+    try {
+      const generated = await generateReview(submissionId, locale);
+      setReview(generated.review);
+    } catch {
+      setReview({ status: 'UNAVAILABLE', feedback: null, failureCode: 'AI_PROVIDER_ERROR', model: null, completedAt: null });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const ready = review?.status === 'READY' ? review.feedback : null;
+
+  return (
+    <section className="ai-section" aria-labelledby="ai-feedback-title">
+      <h2 id="ai-feedback-title">{t.aiFeedbackTitle}</h2>
+      <p className="muted">{t.aiAdvisory}</p>
+
+      {ready && (
+        <div className="ai-ready">
+          <AdviceList title={t.aiStrengths} items={ready.strengths} />
+          <AdviceList title={t.aiImprove} items={ready.areas_to_improve} />
+          <AdviceList title={t.aiActions} items={ready.actionable_recommendations} />
+          <div className="advice-block">
+            <h4>{t.aiSummary}</h4>
+            <p>{ready.explanation}</p>
+          </div>
+        </div>
+      )}
+
+      {!ready && pending && <p className="muted" aria-live="polite">{t.aiGenerating}</p>}
+
+      {!ready && !pending && (
+        <div className="ai-fallback">
+          <p>{t.aiUnavailable}</p>
+          <button className="button button-small" onClick={() => { void handleGenerate(); }}>{t.aiRegenerate}</button>
+        </div>
+      )}
+    </section>
+  );
+}
 
 /** Work evidence: what the learner actually did, how they did it, and how it
  *  was scored. The deterministic evaluation is shown with per-criterion
@@ -79,6 +153,8 @@ export function EvidencePage() {
           ) : (
             <p className="muted">{t.evidenceSkillsEmpty}</p>
           )}
+
+          <AiReviewSection submissionId={evidence.id} />
 
           <h2>{t.evidenceSkillsTitle}</h2>
           {evidence.skills.length === 0 ? (

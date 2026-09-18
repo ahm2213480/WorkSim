@@ -91,6 +91,33 @@ export interface Evidence {
   startedAt: string;
 }
 
+export interface ReviewFeedback {
+  strengths: string[];
+  areas_to_improve: string[];
+  actionable_recommendations: string[];
+  explanation: string;
+}
+
+export interface CoachFeedback {
+  demonstrated_strengths: string[];
+  skills_to_improve: string[];
+  recommended_next_skills: string[];
+  recommended_next_simulation: string;
+  reasoning: string;
+}
+
+export interface StoredAiFeedback<T> {
+  status: 'READY' | 'UNAVAILABLE';
+  feedback: T | null;
+  failureCode: string | null;
+  model: string | null;
+  completedAt: string | null;
+}
+
+export type CoachResult =
+  | { status: 'READY' | 'UNAVAILABLE'; feedback: CoachFeedback | null; failureCode: string | null; model: string | null; completedAt: string | null }
+  | { status: 'INSUFFICIENT_EVIDENCE'; completedCount: number };
+
 function withLocale(path: string, locale: string) {
   return `${path}${path.includes('?') ? '&' : '?'}locale=${locale.toUpperCase()}`;
 }
@@ -131,4 +158,22 @@ export function submitAttempt(attemptId: string, work: Record<string, string>, l
 
 export function getSubmission(submissionId: string, locale: string) {
   return apiFetch<{ evidence: Evidence }>(withLocale(`/api/submissions/${encodeURIComponent(submissionId)}`, locale));
+}
+
+// ---- AI features (advisory feedback; the server validates and caches) ------
+
+export function readReview(submissionId: string, locale: string) {
+  return apiFetch<{ review: StoredAiFeedback<ReviewFeedback> | null }>(withLocale(`/api/submissions/${encodeURIComponent(submissionId)}/ai-review`, locale));
+}
+
+export function generateReview(submissionId: string, locale: string) {
+  return apiFetch<{ review: StoredAiFeedback<ReviewFeedback> }>(withLocale(`/api/submissions/${encodeURIComponent(submissionId)}/ai-review`, locale), { method: 'POST' });
+}
+
+export function readCoachReport(locale: string) {
+  return apiFetch<{ report: CoachResult | null }>(withLocale('/api/coach', locale));
+}
+
+export function generateCoachReport(locale: string) {
+  return apiFetch<{ report: CoachResult }>(withLocale('/api/coach/generate', locale), { method: 'POST' });
 }
