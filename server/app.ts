@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import path from 'node:path';
 import { attemptsRouter } from './attempts/routes.js';
 import { authRouter } from './auth/routes.js';
+import { aiRouter } from './ai/routes.js';
+import { defaultProvider, type AiProvider } from './ai/provider.js';
 import { getEnv } from './env.js';
 import { HttpError } from './http-error.js';
 import { simulationsRouter } from './simulations/routes.js';
@@ -15,6 +17,8 @@ export interface AppOptions {
   cookieSecure?: boolean;
   /** Overrides AUTH_RATE_LIMIT (used by tests). */
   rateLimitPerWindow?: number;
+  /** Overrides the AI provider (tests inject a fake; default reads env). */
+  aiProvider?: AiProvider;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -45,6 +49,9 @@ export function createApp(options: AppOptions = {}) {
   // Attempts and submissions are always scoped to the signed-in learner.
   app.use('/api/attempts', attemptsRouter());
   app.use('/api/submissions', submissionsRouter());
+  // AI endpoints (review + coach) are owned by the signed-in user and rate
+  // limited for cost; the provider is injectable so tests use a fake.
+  app.use('/api', aiRouter(options.aiProvider ?? defaultProvider()));
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'API endpoint not found.' } });

@@ -12,6 +12,12 @@ const schema = z.object({
   COOKIE_SECURE: z.enum(['auto', 'true', 'false']).default('auto'),
   AUTH_RATE_LIMIT: z.coerce.number().int().min(1).max(1000).default(30),
   SEED_DEMO_PASSWORD: z.string().min(8).default('Worksim-demo-1'),
+  // AI provider (optional): without a key the platform stays fully functional
+  // and AI features surface a clear "unavailable" state instead of failing.
+  AI_API_KEY: z.string().min(1).optional(),
+  AI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  AI_MODEL: z.string().min(1).default('gpt-4o-mini'),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000).default(30000),
 });
 
 export type Env = z.infer<typeof schema>;
