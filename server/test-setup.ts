@@ -14,5 +14,10 @@ export function setup(): void {
   }
   const databaseUrl = `file:${databasePath.split(path.sep).join('/')}`;
   execSync('npx prisma migrate deploy', { stdio: 'pipe', env: { ...process.env, DATABASE_URL: databaseUrl } });
+  // Same seeding path as local development, so tests exercise the exact
+  // simulation content an assessor sees: catalog, materials, events, tasks and
+  // the demo accounts. dotenv does not override an existing variable, so the
+  // test DATABASE_URL below is the one the seed script uses.
+  execSync('npx tsx server/seed.ts', { stdio: 'pipe', env: { ...process.env, DATABASE_URL: databaseUrl } });
   process.env.DATABASE_URL = databaseUrl;
 }

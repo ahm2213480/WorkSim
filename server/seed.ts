@@ -2,11 +2,13 @@ import 'dotenv/config';
 import { prisma } from './db.js';
 import { getEnv } from './env.js';
 import { hashPassword } from './auth/passwords.js';
+import { syncCatalog } from './simulations/sync.js';
 
-// Demo accounts for local development and the assessment demo. Public
+// Demo accounts for local development and the assessment walkthrough. Public
 // registration only ever creates learners; staff accounts exist so the mentor,
-// employer and admin flows can be demonstrated. Passwords come from .env
-// (SEED_DEMO_PASSWORD) and must be changed or disabled in a real deployment.
+// employer and admin flows can be demonstrated. The password comes from
+// SEED_DEMO_PASSWORD in .env and must be changed (or these accounts removed)
+// before any real deployment.
 const accounts = [
   { email: 'learner@worksim.dev', name: 'Lina Learner', role: 'LEARNER', locale: 'EN' },
   { email: 'mentor@worksim.dev', name: 'Omar Mentor', role: 'MENTOR', locale: 'EN' },
@@ -19,10 +21,13 @@ const passwordHash = hashPassword(getEnv().SEED_DEMO_PASSWORD);
 for (const account of accounts) {
   await prisma.user.upsert({
     where: { email: account.email },
-    update: {}, // Keep any changes made through the app after first seeding.
+    update: {}, // Keep profile changes made through the app after first seeding.
     create: { ...account, passwordHash },
   });
   console.log(`Seeded ${account.role} account: ${account.email}`);
 }
+
+const summary = await syncCatalog();
+console.log(`Seeded ${summary.skills} skills and ${summary.simulations} simulations`);
 
 await prisma.$disconnect();

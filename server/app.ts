@@ -1,9 +1,12 @@
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import path from 'node:path';
+import { attemptsRouter } from './attempts/routes.js';
 import { authRouter } from './auth/routes.js';
 import { getEnv } from './env.js';
 import { HttpError } from './http-error.js';
+import { simulationsRouter } from './simulations/routes.js';
+import { submissionsRouter } from './submissions/routes.js';
 
 export interface AppOptions {
   /** Directory of the built client assets (production only). */
@@ -36,6 +39,13 @@ export function createApp(options: AppOptions = {}) {
   app.get('/api/health', (_req, res) => {
     res.set('Cache-Control', 'no-store').json({ status: 'ok', service: 'worksim-api' });
   });
+
+  // Catalog reads are public; starting a simulation is not (see simulations/routes.ts).
+  app.use('/api/simulations', simulationsRouter());
+  // Attempts and submissions are always scoped to the signed-in learner.
+  app.use('/api/attempts', attemptsRouter());
+  app.use('/api/submissions', submissionsRouter());
+
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'API endpoint not found.' } });
   });

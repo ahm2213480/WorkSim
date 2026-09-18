@@ -32,12 +32,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions        Session[]
-  attempts        SimulationAttempt[]
-  mentorReviews   MentorReview[]   @relation("MentorReviewsByMentor")
-  evidenceGranted EvidenceShare[]  @relation("EvidenceSharedByLearner")
-  evidenceRedeemed EvidenceShare[] @relation("EvidenceRedeemedByEmployer")
-  coachReport     CoachReport?
+  sessions         Session[]
+  attempts         SimulationAttempt[]
+  mentorReviews    MentorReview[]      @relation("MentorReviewsByMentor")
+  evidenceGranted  EvidenceShare[]     @relation("EvidenceSharedByLearner")
+  evidenceRedeemed EvidenceShare[]     @relation("EvidenceRedeemedByEmployer")
+  coachReport      CoachReport?
 }
 
 /// Server-side session store. The browser holds an opaque random token in an
@@ -75,11 +75,11 @@ model Simulation {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  tasks      SimulationTask[]
-  materials  SimulationMaterial[]
-  events     SimulationEvent[]
-  skills     SimulationSkill[]
-  attempts   SimulationAttempt[]
+  tasks     SimulationTask[]
+  materials SimulationMaterial[]
+  events    SimulationEvent[]
+  skills    SimulationSkill[]
+  attempts  SimulationAttempt[]
 }
 
 /// The deliverable of a simulation: instructions, the shape of the expected
@@ -103,6 +103,8 @@ model SimulationTask {
   updatedAt      DateTime   @updatedAt
 
   attempts SimulationAttempt[]
+
+  @@unique([simulationId, order])
 }
 
 /// Reference material the learner receives "on their desk" (bug report,
@@ -113,7 +115,7 @@ model SimulationMaterial {
   id           String     @id @default(cuid())
   simulationId String
   simulation   Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  kind         String     // BRIEF | BUG_REPORT | REQUIREMENTS | CODE | DATASET | MESSAGE | SCREENSHOT
+  kind         String // BRIEF | BUG_REPORT | REQUIREMENTS | CODE | DATASET | MESSAGE | SCREENSHOT
   titleEn      String
   titleAr      String
   contentEn    String
@@ -131,8 +133,12 @@ model SimulationMaterial {
 model SimulationEvent {
   id             String     @id @default(cuid())
   simulationId   String
+  /// Authoring key (e.g. "guest-checkout-update"). Rubric criteria reference
+  /// this key, not the row id, so content stays readable and stable across
+  /// re-seeding; the API maps keys to ids when serving an attempt.
+  key            String
   simulation     Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  kind           String     // MANAGER_MESSAGE | REQUIREMENT_CHANGE | CUSTOMER_FEEDBACK
+  kind           String // MANAGER_MESSAGE | REQUIREMENT_CHANGE | CUSTOMER_FEEDBACK
   fromName       String
   fromRole       String?
   titleEn        String
@@ -144,6 +150,7 @@ model SimulationEvent {
 
   deliveries AttemptEvent[]
 
+  @@unique([simulationId, key])
   @@index([simulationId])
 }
 
@@ -178,19 +185,25 @@ model SimulationSkill {
 /// already-started task resumes the same attempt, which keeps draft state,
 /// submission and evaluation unambiguous. `draftJson` holds work in progress
 /// keyed by the task's submission field keys.
+///
+/// `taskSnapshotJson` freezes the brief (instructions + submission fields, both
+/// locales) as the learner received it. Evidence must stay truthful even if an
+/// admin later edits the task in the catalog, so the evidence views read the
+/// snapshot rather than the live row.
 model SimulationAttempt {
-  id           String         @id @default(cuid())
-  userId       String
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  simulationId String
-  simulation   Simulation     @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  taskId       String
-  task         SimulationTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  status       String         @default("ACTIVE") // ACTIVE | SUBMITTED | EVALUATED
-  draftJson    String         @default("{}")
-  createdAt    DateTime       @default(now())
-  lastSavedAt  DateTime?
-  submittedAt  DateTime?
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulationId     String
+  simulation       Simulation     @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  taskId           String
+  task             SimulationTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  status           String         @default("ACTIVE") // ACTIVE | SUBMITTED | EVALUATED
+  draftJson        String         @default("{}")
+  taskSnapshotJson String         @default("{}")
+  createdAt        DateTime       @default(now())
+  lastSavedAt      DateTime?
+  submittedAt      DateTime?
 
   submission      Submission?
   eventDeliveries AttemptEvent[]
@@ -202,12 +215,12 @@ model SimulationAttempt {
 /// Evidence that a learner received a simulation event during an attempt.
 /// Written once on first delivery; read state is part of the workspace UI.
 model AttemptEvent {
-  id         String          @id @default(cuid())
-  attemptId  String
-  attempt    SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  eventId    String
-  event      SimulationEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  deliveredAt DateTime       @default(now())
+  id          String            @id @default(cuid())
+  attemptId   String
+  attempt     SimulationAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  eventId     String
+  event       SimulationEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  deliveredAt DateTime          @default(now())
 
   @@unique([attemptId, eventId])
   @@index([attemptId])
@@ -222,10 +235,10 @@ model Submission {
   workJson    String
   submittedAt DateTime          @default(now())
 
-  evaluation        Evaluation?
-  aiFeedback        AIFeedback[]
+  evaluation         Evaluation?
+  aiFeedback         AIFeedback[]
   demonstratedSkills DemonstratedSkill[]
-  mentorReviews     MentorReview[]
+  mentorReviews      MentorReview[]
 }
 
 /// Objective checks only. Store the rubric version and per-criterion evidence;
@@ -247,7 +260,7 @@ model AIFeedback {
   id            String     @id @default(cuid())
   submissionId  String
   submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  locale        String     // EN | AR
+  locale        String // EN | AR
   status        String     @default("PENDING") // PENDING | READY | UNAVAILABLE
   inputHash     String
   promptVersion String
@@ -311,18 +324,17 @@ model EvidenceShare {
 /// Latest coach result per learner. inputHash includes evidence and locale;
 /// return cached advice only when that fingerprint still matches.
 model CoachReport {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  locale        String   // EN | AR
-  status        String   @default("PENDING") // PENDING | READY | UNAVAILABLE
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locale        String // EN | AR
+  status        String    @default("PENDING") // PENDING | READY | UNAVAILABLE
   inputHash     String
   promptVersion String
   model         String?
   feedbackJson  String?
   failureCode   String?
-  requestedAt   DateTime @default(now())
+  requestedAt   DateTime  @default(now())
   completedAt   DateTime?
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime  @updatedAt
 }
-
