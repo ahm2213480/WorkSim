@@ -12,7 +12,10 @@ a, button { -webkit-tap-highlight-color: transparent; }
 .brand { display: flex; align-items: center; gap: 10px; font-size: 24px; letter-spacing: -1px; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; background: #153e35; color: #dcf0b1; border-radius: 10px; font-size: 23px; }
 nav { display: flex; align-items: center; gap: 24px; font-size: 14px; font-weight: 600; }
-.language { border: 1px solid #becbc2; background: transparent; border-radius: 8px; padding: 9px 16px; min-height: 44px; }
+/* Header buttons: the language switcher and log out look alike, but only the
+   switcher carries the `language` class (it is the element tests and assistive
+   tech identify); previously log out reused it, which made both ambiguous. */
+.language, .nav-button { border: 1px solid #becbc2; background: transparent; border-radius: 8px; padding: 9px 16px; min-height: 44px; }
 .hero { padding-block: 80px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: center; }
 .eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #426453; }
 h1 { font-size: clamp(36px, 4.5vw, 60px); line-height: 1.13; letter-spacing: -2px; white-space: pre-line; margin: 20px 0; font-weight: 750; }
@@ -100,6 +103,7 @@ footer { padding-block: 24px; border-top: 1px solid #dce4dd; color: #51635b; fon
 .code-view code { font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.55; white-space: pre; }
 /* Pending-mentor-review badge on the learner evidence page. */
 .mentor-pending { display: inline-flex; align-items: center; gap: 8px; background: #fdf6e3; border: 1px solid #e8d9a8; border-radius: 999px; padding: 6px 14px; font-size: 14px; margin: 0; }
+.workspace-tabs { display: none; }
 .workspace-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .workspace-actions .button { margin-top: 12px; }
 .inbox { list-style: none; padding: 0; display: grid; gap: 14px; }
@@ -108,6 +112,17 @@ footer { padding-block: 24px; border-top: 1px solid #dce4dd; color: #51635b; fon
 .inbox-title { font-weight: 700; margin: 0 0 6px; }
 .inbox-body { margin: 0; white-space: pre-line; font-size: 14px; }
 .workspace-materials { margin-top: 8px; }
+.workspace-materials-pane { margin-top: 28px; }
+/* Materials are expandable so the reports are readable in place. */
+.workspace-materials li { display: block; padding: 0; }
+.workspace-materials summary { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; font-size: 13px; font-weight: 600; cursor: pointer; }
+.workspace-materials details[open] summary { color: #153e35; }
+.material-content { margin: 0 0 12px; padding: 14px 16px; background: #f4f6f2; border: 1px solid #d3ddd0; border-radius: 10px; font: inherit; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Code keeps its own formatting and scrolls sideways rather than wrapping. */
+.material-content.code { font-family: Consolas, 'Courier New', monospace; white-space: pre; overflow-x: auto; }
+/* Long words and URLs in task text must never widen the page on a phone. */
+.workspace-grid > * { min-width: 0; }
+.task-instructions, .work-field dd, .inbox-item, .criterion, .advice-block { overflow-wrap: anywhere; }
 /* Evidence page. */
 .evidence-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; align-items: start; margin-top: 24px; }
 .score-line { font-size: 18px; }
@@ -146,6 +161,20 @@ footer { padding-block: 24px; border-top: 1px solid #dce4dd; color: #51635b; fon
   .detail-grid, .evidence-grid, .workspace-grid, .catalog-grid { grid-template-columns: 1fr; }
   .catalog-controls { grid-template-columns: 1fr; }
   .workspace-side { border-top: 1px solid #dce4dd; padding-top: 24px; }
+  /* Narrow screens: one pane at a time behind the tab strip, so the learner
+     never has to scroll past a long work form to reach messages or materials. */
+  .workspace-tabs { display: flex; gap: 8px; margin-top: 18px; }
+  .workspace-tabs button { flex: 1 1 0; min-height: 44px; padding: 8px 12px; background: white; border: 1px solid #becbc2; border-radius: 8px; font-size: 14px; font-weight: 600; color: inherit; }
+  .workspace-tabs button[aria-pressed='true'] { background: #153e35; border-color: #153e35; color: white; }
+  .workspace-grid[data-pane='work'] .workspace-side,
+  .workspace-grid[data-pane='messages'] .workspace-task,
+  .workspace-grid[data-pane='messages'] .workspace-materials-pane,
+  .workspace-grid[data-pane='materials'] .workspace-task,
+  .workspace-grid[data-pane='materials'] .workspace-inbox-pane { display: none; }
+  .workspace-grid { margin-top: 16px; }
+  .workspace-grid[data-pane='messages'] .workspace-side,
+  .workspace-grid[data-pane='materials'] .workspace-side { border-top: 0; padding-top: 0; }
+  .workspace-materials-pane { margin-top: 0; }
 }
 [dir='rtl'] h1, [dir='rtl'] h2, [dir='rtl'] .eyebrow { letter-spacing: 0; }
 [dir='rtl'] h1 { line-height: 1.4; }

@@ -37,6 +37,10 @@ export function Workspace() {
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Mobile pane switch. On wide screens the CSS shows both columns and hides
+  // the tabs, so this state is simply unused there: one source of truth, no
+  // duplicated mobile/desktop markup to keep in sync.
+  const [pane, setPane] = useState<'work' | 'messages' | 'materials'>('work');
 
   const draftRef = useRef(draft);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,7 +168,33 @@ export function Workspace() {
         </p>
       )}
 
-      <div className="workspace-grid">
+      {/* Pane switcher (mobile only; hidden and unused on wide screens). This is
+          a set of toggle buttons rather than a `tablist`: the three panes are all
+          visible on desktop and none of them is a `tabpanel`, so the tab pattern
+          would announce roles that control nothing. `aria-pressed` states the
+          toggle honestly and needs no arrow-key handling. */}
+      <div className="workspace-tabs" role="group" aria-label={t.workspaceTabsLabel}>
+        {([
+          ['work', t.workspaceTabWork],
+          ['messages', t.workspaceTabMessages],
+          ['materials', t.workspaceTabMaterials],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            id={`workspace-tab-${value}`}
+            aria-pressed={pane === value}
+            onClick={() => setPane(value)}
+          >
+            {label}
+            {/* The inbox is the one pane with unseen content, so the count sits
+                on the tab instead of forcing a visit to find it. */}
+            {value === 'messages' && events.length > 0 ? ` (${events.length})` : ''}
+          </button>
+        ))}
+      </div>
+
+      <div className="workspace-grid" data-pane={pane}>
         <div className="workspace-task">
           <h2>{t.workspaceTaskTitle}: {attempt.task.title}</h2>
           <p className="muted">{t.workspaceInstructionsTitle}</p>
@@ -226,28 +256,48 @@ export function Workspace() {
         </div>
 
         <aside className="workspace-side">
-          <h2>{t.workspaceInboxTitle}</h2>
-          {events.length === 0 && <p className="muted">{t.workspaceInboxEmpty}</p>}
-          <ul className="inbox">
-            {events.map((event) => (
-              <li key={event.id} className="inbox-item">
-                <p className="inbox-meta">
-                  <b>{event.fromName}</b>{event.fromRole ? ` · ${event.fromRole}` : ''}
-                  {' · '}
-                  <time dateTime={event.deliveredAt}>{new Date(event.deliveredAt).toLocaleTimeString(locale === 'ar' ? 'ar' : 'en', { hour: '2-digit', minute: '2-digit' })}</time>
-                </p>
-                <p className="inbox-title">{event.title}</p>
-                <p className="inbox-body">{event.body}</p>
-              </li>
-            ))}
-          </ul>
+          <section className="workspace-inbox-pane">
+            <h2>{t.workspaceInboxTitle}</h2>
+            {events.length === 0 && <p className="muted">{t.workspaceInboxEmpty}</p>}
+            <ul className="inbox">
+              {events.map((event) => (
+                <li key={event.id} className="inbox-item">
+                  <p className="inbox-meta">
+                    <b>{event.fromName}</b>{event.fromRole ? ` · ${event.fromRole}` : ''}
+                    {' · '}
+                    <time dateTime={event.deliveredAt}>{new Date(event.deliveredAt).toLocaleTimeString(locale === 'ar' ? 'ar' : 'en', { hour: '2-digit', minute: '2-digit' })}</time>
+                  </p>
+                  <p className="inbox-title">{event.title}</p>
+                  <p className="inbox-body">{event.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-          <h2>{t.workspaceMaterialsTitle}</h2>
-          <ul className="materials workspace-materials">
-            {materials.map((material) => (
-              <li key={material.id}><span aria-hidden="true">{material.kind === 'DATASET' ? '▦' : '▸'}</span> {material.title}</li>
-            ))}
-          </ul>
+          <section className="workspace-materials-pane">
+            <h2>{t.workspaceMaterialsTitle}</h2>
+            {/* Materials are readable in place. The bug report and the
+                acceptance criteria are the task's raw inputs, so a title-only
+                list would leave the task unanswerable. Code keeps preformatted
+                scrolling; prose wraps, so nothing overflows a phone. */}
+            <ul className="materials workspace-materials">
+              {materials.map((material) => (
+                <li key={material.id}>
+                  <details>
+                    <summary>
+                      <span aria-hidden="true">{material.kind === 'DATASET' ? '▦' : material.kind === 'CODE' ? '' : '▸'}</span>{' '}
+                      {material.title}
+                    </summary>
+                    {material.kind === 'CODE' ? (
+                      <pre className="material-content code" dir="ltr"><code>{material.content}</code></pre>
+                    ) : (
+                      <pre className="material-content" dir="auto">{material.content}</pre>
+                    )}
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </section>
         </aside>
       </div>
     </section>

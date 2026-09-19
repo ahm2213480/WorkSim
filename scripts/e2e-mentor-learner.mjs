@@ -24,11 +24,20 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
   try { await (await fetch(`${BASE}/api/health`)).json(); break; } catch { await wait(500); }
 }
 
-// 1. Mentor signs in and sees the seeded learner's submission.
+// 1. Mentor signs in and sees the seeded learner's submission. The dev database
+// accumulates submissions from walkthroughs, so select the seeded learner
+// explicitly rather than trusting queue order — the learner-ownership checks
+// below only hold for that record.
 const mentorCookie = await login('mentor@worksim.dev', 'Worksim-demo-1');
 const queue = await (await fetch(`${BASE}/api/mentor/submissions?locale=EN`, { headers: { Cookie: mentorCookie } })).json();
-const item = queue.submissions?.[0];
+const item = queue.submissions?.find((entry) => entry.learner?.name === 'Lina Learner');
 check('mentor queue is populated', queue.submissions?.length >= 1, `count=${queue.submissions?.length}`);
+check('seeded demo submission is queued', !!item,
+  (queue.submissions ?? []).map((entry) => entry.learner?.name).join(', ').slice(0, 120));
+if (!item) {
+  console.log('\nSEEDED DEMO SUBMISSION MISSING FROM THE QUEUE — run `npm run db:seed`');
+  process.exit(1);
+}
 check('queue shows learner + simulation + score + status',
   !!item && !!item.learner?.name && !!item.simulation?.title && typeof item.score?.score === 'number' && !!item.reviewStatus,
   item ? `${item.learner.name} / ${item.simulation.title} / ${item.score.score}/${item.score.maxScore} / ${item.reviewStatus}` : 'none');

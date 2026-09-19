@@ -10,4 +10,10 @@ export default tseslint.config(
   { languageOptions: { globals: globals.node } },
   { files: ['client/**/*.{ts,tsx}'], languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': hooks }, rules: hooks.configs.recommended.rules },
+  // Real-browser checks run snippets inside the page via page.evaluate(), so
+  // those files legitimately use browser globals inside those callbacks.
+  {
+    files: ['scripts/e2e-mobile-*.mjs', 'scripts/capture-screenshots.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 );

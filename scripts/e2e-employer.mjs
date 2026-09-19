@@ -29,12 +29,23 @@ const main = async () => {
   const meBody = await me.json();
   check('me role=EMPLOYER', me.status === 200 && meBody.user?.role === 'EMPLOYER', meBody.user?.role);
 
-  // 3. Evidence list contains the seeded consented submission.
+  // 3. Evidence list contains the seeded consented submission. The dev database
+  // is shared with manual walkthroughs (and dev auto-share), so the list can hold
+  // more than the seeded entry: target the seeded learner explicitly instead of
+  // assuming the list has exactly one row.
   const list = await fetch(`${BASE}/api/employer/evidence?locale=EN`, { headers: { Cookie: employer.cookie } });
   const listBody = await list.json();
-  const item = listBody.submissions?.[0];
-  check('evidence list', list.status === 200 && listBody.submissions?.length === 1,
-    `count=${listBody.submissions?.length}`);
+  const items = listBody.submissions ?? [];
+  const item = items.find((entry) => entry.learner?.name === 'Lina Learner');
+  check('evidence list', list.status === 200 && items.length >= 1, `count=${items.length}`);
+  check('seeded demo evidence is listed', !!item,
+    items.map((entry) => entry.learner?.name).join(', ').slice(0, 120));
+  if (!item) {
+    // Without the seeded record the remaining checks would only test an
+    // accidental row, so stop here instead of reporting misleading results.
+    console.log('\nSEEDED DEMO EVIDENCE MISSING — run `npm run db:seed`');
+    process.exit(1);
+  }
   check('list context complete', !!item && item.learner?.name === 'Lina Learner' && item.simulation?.company === 'NovaShop'
     && typeof item.score?.score === 'number' && item.skills?.length > 0 && item.mentorReview === 'COMPLETED',
     item ? `${item.learner.name} / ${item.simulation.company} / ${item.score.score}/${item.score.maxScore} / skills=${item.skills.length} / mentor=${item.mentorReview}` : 'none');

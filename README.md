@@ -4,11 +4,11 @@ Practice realistic work. Build evidence of how you think, what you produce, and 
 
 ## Implementation status
 
-**Phase 0 complete; Phase 1 scaffold implemented. The assessment product is not complete.**
+**All twelve delivery phases are complete and verified.** `docs/ROADMAP.md` holds the per-phase checkpoints and the final acceptance checklist; `docs/OUT-OF-SCOPE.md` lists what is deliberately absent.
 
-Currently implemented: React landing preview, English/Arabic language switch and document direction, Express liveness endpoint, safe JSON errors, request size limits, security headers, build tooling, API tests, and a production HTTP smoke check.
+Working end to end: learner catalog → detail → workspace → submission → evidence; two playable bilingual simulations with timed requirement changes; explainable deterministic evaluation; AI submission reviewer and skill coach (validated, cached, advisory, safe to fail); mentor queue and human review with learner-visible feedback; consent-based read-only employer evidence; admin catalog management; full English/Arabic with correct RTL; browser-verified mobile workspace.
 
-Not implemented yet: database, authentication, playable simulations, saved work, evaluation, AI, mentor/employer/admin workflows. The landing page explicitly labels its scenarios as a development preview. It does not pretend they are playable.
+Every claim in this file is backed by an automated check (Vitest, TypeScript, ESLint, production build, HTTP smoke) or a real-browser/E2E script in `scripts/` — not by a scaffold or a mock response.
 
 ## Local setup
 
@@ -16,12 +16,14 @@ Requires Node >=22.12 and npm. From the repository root:
 
 ```sh
 npm ci
-npm run dev
+npm run db:deploy   # apply migrations
+npm run db:seed     # demo accounts + the code-authored catalog
+npm run dev         # API on 3001 + Vite on 5173 with the /api proxy
 ```
 
 Open http://127.0.0.1:5173. Vite proxies `/api` to Express at http://127.0.0.1:3001.
 
-Environment overrides are optional: copy `.env.example` to `.env` if needed. Never commit `.env`.
+Configuration is optional for local work: copy `.env.example` to `.env` if needed. **Never commit `.env`.** The complete table — defaults, the AI key, and the dev-only demo switches — is in `docs/ENVIRONMENT.md`; the short version:
 
 | Variable   | Default       | Purpose                                                  |
 | ---------- | ------------- | -------------------------------------------------------- |
@@ -29,22 +31,24 @@ Environment overrides are optional: copy `.env.example` to `.env` if needed. Nev
 | `HOST`     | `127.0.0.1`   | Use `0.0.0.0` on a hosting service if required           |
 | `PORT`     | `3001`        | Backend listening port; dev proxy currently targets 3001 |
 
-Do not put secrets in frontend variables. AI and database configuration will be documented when implemented.
+Only `AI_API_KEY` and the demo password are secrets. Both stay server-side: the key is never sent to the browser and never appears in a prompt, and no secret is ever placed in a `VITE_*`/frontend variable. The AI key may simply be omitted.
 
 ## Checks
 
 ```sh
-npm run lint
-npm test
-npm run build
-node scripts/smoke.mjs
+npm run check                     # lint (zero warnings) + tests + typecheck + build
+node scripts/smoke.mjs            # production HTTP smoke (requires a build)
+node scripts/verify-demo-accounts.mjs  # all four demo roles sign in
+npm run ai:check                  # live AI provider check (needs AI_API_KEY)
 ```
 
-`npm run check` runs lint, tests, typecheck, and build. The smoke check requires a prior build, starts the compiled production server on port 3199, requests health/HTML/JavaScript/API-404, then stops it. Set `SMOKE_PORT` to override its port. It is not a browser or mobile layout test.
+`npm run check` is the full gate: ESLint with `--max-warnings 0`, the Vitest suite, all three TypeScript projects, and the client+server production build. Every "it works" claim in this README is backed by one of these checks or by the E2E scripts below — not by manual assertion alone.
 
 ## Production foundation
 
-Run `npm ci`, `npm run build`, and `npm start` with `NODE_ENV=production` configured in the host environment. Express serves `dist/client` and `/api` on the same origin. A split frontend deployment must proxy `/api` to the backend; do not add permissive CORS as a shortcut. TLS is expected at the hosting reverse proxy. Deployment of the full product remains unverified.
+Run `npm ci`, `npm run build`, and `npm start` with `NODE_ENV=production` configured in the host environment. Express serves `dist/client` and `/api` on the same origin. A split frontend deployment must proxy `/api` to the backend; do not add permissive CORS as a shortcut. TLS is expected at the hosting reverse proxy (`COOKIE_SECURE=auto` then marks cookies Secure).
+
+The production build is exercised locally by the smoke check and every E2E script above (each one runs the compiled server in production mode). No hosting deployment has been performed, and the SQLite choices that constrain one — a single instance and a persistent disk, with PostgreSQL as the documented migration path — are recorded in `docs/ENVIRONMENT.md`.
 
 ## Product scope
 
@@ -55,7 +59,7 @@ Two required scenarios:
 - **NovaShop / Junior Frontend Developer:** investigate mobile checkout failures, propose a patch, respond to a guest-checkout clarification, and provide a test plan.
 - **MarketFlow / Junior Data Analyst:** analyze a synthetic sales dataset, explain a decline with reproducible calculations, and recommend action with limitations.
 
-These are fictional companies, not real employer integrations. Their full materials and workflows are planned, not implemented.
+Both scenarios are fully playable and shipped with bilingual materials (bug report, suspect component source, synthetic CSV dataset with a data dictionary, acceptance criteria) plus timed in-simulation events. The companies are fictional — no real employer integrations exist or are implied.
 
 ## Mentor review workflow
 
@@ -134,17 +138,60 @@ Verified in a real browser, not just in tests: `node scripts/e2e-mobile-workspac
 
 ## AI boundaries
 
-Planned AI features are post-submission review and personalized skill coaching. Both will be server-side, advisory, validated, cached, and safe to fail without losing submissions. Actual provider/model/prompts/cost limits will be documented alongside implementation. No AI service is currently called.
+Two features ship, both server-side and advisory: a **submission reviewer** (strengths, gaps, recommendations, explanation for one submitted task) and a **skill coach** (cross-simulation development guidance from completed evidence). Both go through one small provider adapter (Gemini via its OpenAI-compatible endpoint), are validated by a zod schema, cached by evidence hash + locale + prompt version, and are hard-capped on output size and per-user request rate. `docs/AI.md` documents the prompts, the schema, the failure taxonomy and the cost bounds.
 
-AI is intentionally **not** used for authentication, authorization, CRUD, navigation, localization, search, validation, or objective calculation checks: deterministic software is cheaper, more predictable, and auditable. Presence of an explanation is not proof of technical correctness. No arbitrary learner code will be executed by the platform.
+The design rules that matter:
 
-## Documentation and acceptance
+- **The deterministic rubric is the score of record.** AI feedback has no numeric field at all and can never change a score; mentor feedback is human oversight and equally advisory.
+- **AI is never used for** authentication, authorization, catalog CRUD, navigation, localization, search, validation, or objective calculation — deterministic software is cheaper, more predictable and auditable, and a score must be reproducible.
+- **AI is optional.** With no `AI_API_KEY` every page still works and shows a neutral "feedback unavailable" state; a timeout, provider error, rate limit or malformed response is stored as `UNAVAILABLE` rather than shown as truth. Submissions are always saved before any provider call.
+- **Viewing feedback never spends tokens.** Mentor and employer screens read stored, READY rows only and cannot trigger generation.
+- **The platform never executes learner code.** Submitted patches are text proposals reviewed by rubric/AI/mentor — running them would be a remote-code-execution liability with no assessment benefit.
 
-- `docs/ROADMAP.md`: phased work and acceptance gates.
-- `docs/ARCHITECTURE.md`: decisions and proposed data/API boundaries.
-- `screenshots/README.md`: final capture plan; no fabricated screenshots.
+`npm run ai:check` exercises the real provider with a fixed input and prints the validated result — that is the honest live-provider evidence. The Vitest suite uses deterministic test doubles (labelled as such) and asserts the failure taxonomy; doubles are never counted as live verification.
 
-The final README must expand with the actual schema, auth/security design, simulation rubric, AI prompts/output/failure/cost behavior, mentor and employer flows, test results, real screenshots, and deployment limitations. Those claims are intentionally not made before implementation.
+## Screenshots
+
+Ten screenshots of the **real running product** (production build, seeded demo data, driven through a real browser with `playwright-core`) live in `screenshots/`. They are produced by `node scripts/capture-screenshots.mjs`, which asserts that each page rendered the expected text direction and that no two images are byte-identical — a duplicate would mean a capture silently failed and would be dishonest to ship as evidence of a different screen. The per-file log is in `screenshots/README.md`.
+
+| File | Audience | What it shows |
+| --- | --- | --- |
+| `01-home.png` | Visitors | realistic job practice and the evidence model |
+| `02-catalog.png` | Learners | comparing the two simulations, filtering by skill |
+| `03-novashop-details.png` | Learners | the frontend brief, requirements and materials |
+| `04-novashop-workspace.png` | Learners | the buggy component source, the task form, the team inbox |
+| `05-novashop-feedback.png` | Learners | deterministic evaluation plus the AI review |
+| `06-marketflow-workspace.png` | Learners | the sales dataset materials and analysis fields |
+| `07-mentor-review.png` | Mentors | submitted work, AI context, human feedback form |
+| `08-employer-evidence.png` | Employers | a consenting candidate's work, evaluation and approach |
+| `09-mobile-workspace.png` | Learners | the workspace at a 390x844 phone viewport (pane tabs) |
+| `10-arabic-interface.png` | Arabic speakers | a core workflow in Arabic with RTL direction |
+
+## Documentation
+
+- `docs/ROADMAP.md` — phases, per-phase verified checkpoints, final acceptance checklist.
+- `docs/ARCHITECTURE.md` — architecture decisions (ADRs) and the data/API boundaries.
+- `docs/AI.md` — prompts, schemas and validation, caching, failure taxonomy, cost bounds, AI boundaries.
+- `docs/ENVIRONMENT.md` — every environment variable, database location, deployment story and its limitations.
+- `docs/OUT-OF-SCOPE.md` — deliberately absent features and mocked/demo-only behavior, each with the reason it stays out.
+- `screenshots/README.md` — the screenshot capture log.
+
+## End-to-end verification
+
+Each script boots the compiled production server and drives it over HTTP (or a real browser), asserting behaviour rather than describing it:
+
+```sh
+node scripts/smoke.mjs                 # health, HTML, built asset, API 404
+node scripts/e2e-admin.mjs             # admin authorization + catalog CRUD lifecycle
+node scripts/e2e-employer.mjs          # consent-scoped employer evidence, IDOR attempts
+node scripts/e2e-mentor-learner.mjs    # mentor queue → review → learner-visible feedback
+node scripts/e2e-locale.mjs            # registered language preference after sign-in
+node scripts/e2e-mobile-workspace.mjs  # real Chrome, 390x844, overflow + tap targets
+node scripts/e2e-demo-assign.mjs       # dev-only auto-assign/auto-share behaviour
+node scripts/e2e-demo-assign-guard.mjs # proves both switches are OFF in production
+node scripts/verify-demo-accounts.mjs  # all four demo roles sign in
+node scripts/capture-screenshots.mjs   # regenerates screenshots/ from the real app
+```
 
 ## Demo accounts
 
@@ -163,3 +210,44 @@ in your local `.env` — the default is `Worksim-demo-1`; never commit `.env`):
 The seed also wires the demo walkthrough: `learner@worksim.dev` is assigned to
 the demo mentor, shares evidence with the demo employer, and has a completed
 submission with a cached AI review and a completed mentor review.
+
+## Demo walkthrough
+
+A short script for reviewing the product (roughly 10 minutes). Every step maps to
+a role and a requirement, and all data is real — nothing here is a mock screen.
+
+1. **Learner, end to end** — sign in as `learner@worksim.dev`, open `/simulations`,
+   compare the two scenarios (skill filter), then open **NovaShop** and read the
+   brief, requirements and materials. Press **Start**, and in the workspace open
+   the buggy-component source, answer the work fields, expand the team inbox, and
+   save a draft. Reload the page: the draft survives. Submit.
+2. **Deterministic evaluation** — the evidence page shows the score with a
+   per-criterion breakdown: met, not met, and *excluded because the requirement
+   arrived after you submitted*. That line is the dynamic-requirement change, and
+   it is the score of record.
+3. **AI reviewer** — on the same page, request AI feedback (or read the stored
+   review). Point out that the score did not move and the AI has no numeric field.
+4. **Mentor** — sign in as `mentor@worksim.dev`, open **Mentor reviews**, and open
+   the seeded submission: the learner's full work product, the evaluation, the
+   recorded timeline, and the learner's AI feedback read-only. Write feedback and
+   **Complete review**.
+5. **Back to the learner** — reload the evidence page as the learner: the **Mentor
+   feedback** section now shows the mentor's name and text. Before step 4 it said
+   *"Pending mentor review"*.
+6. **Employer** — sign in as `employer@worksim.dev`, open **Candidate evidence**,
+   and open the same submission: candidate, assignment context, submitted work,
+   evaluation, skills, timeline, cached AI feedback and completed mentor feedback.
+   There are no edit or generate controls anywhere — this surface is read-only.
+7. **Admin** — sign in as `admin@worksim.dev`, open **Manage catalog**, edit a
+   simulation and deactivate it; it disappears from the public catalog (`/simulations`)
+   immediately. Reactivate it. Note the on-screen warning that reseeding restores
+   code-authored simulations.
+8. **Language and phone** — switch to **العربية** (the interface mirrors to RTL,
+   including the evidence page), then narrow the window or use a phone viewport:
+   the workspace collapses into `Work / Messages / Materials` panes.
+
+Things to say honestly if asked: the AI feedback shown for the seeded submission is
+a **cached** row stamped `seed:demo` (so the reviewer/employer screens are populated
+without spending tokens) — a fresh submission generates real feedback via
+`npm run ai:check`; no hosting deployment has been performed; and `npm audit` could
+not produce a verdict in this environment because the registry retired the endpoint.
