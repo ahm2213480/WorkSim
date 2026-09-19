@@ -1,12 +1,12 @@
 import { Router, type Request } from 'express';
 import { requireAuth } from '../auth/middleware.js';
 import { prisma } from '../db.js';
-import { parseTaskFields, parseRubric, evaluateWork } from '../evaluation/rubric.js';
+import { parseTaskFields } from '../evaluation/rubric.js';
 import { HttpError } from '../http-error.js';
 import { resolveLocale } from '../locale.js';
 import { pick } from '../simulations/view.js';
 import { buildEvidence } from '../submissions/view.js';
-import { loadEvidence } from '../submissions/service.js';
+import { loadEvidence, recordSubmission } from '../submissions/service.js';
 import { MAX_FIELD_LENGTH, deliverDueEvents, parseSnapshot, parseWork } from './service.js';
 
 /** Attempt endpoints: read the workspace, save a draft, and see the learner's
@@ -140,7 +140,6 @@ export function attemptsRouter() {
     const snapshot = parseSnapshot(attempt.taskSnapshotJson);
     const fields = snapshot?.fields ?? parseTaskFields(attempt.task.fieldsJson);
     const work = parseWork(req.body?.work, fields);
-    const rubric = parseRubric(attempt.task.checklistJson);
     // Submitting also touches the attempt, so events whose trigger time has
     // passed are delivered first. Without this, a learner who never refreshed
     // the workspace could be scored on a requirement that had already reached
@@ -150,55 +149,12 @@ export function attemptsRouter() {
     // are matched by key rather than by database id.
     const deliveries = await prisma.attemptEvent.findMany({ where: { attemptId: attempt.id }, include: { event: true } });
     const deliveredKeys = new Set(deliveries.map((delivery) => delivery.event.key));
-    const result = evaluateWork(rubric, work, deliveredKeys);
-    const simulationSkills = await prisma.simulationSkill.findMany({
-      where: { simulationId: attempt.simulationId },
-      include: { skill: true },
-    });
-    const metByKey = new Map(result.criteria.map((criterion) => [criterion.key, criterion]));
 
-    const submission = await prisma.$transaction(async (transaction) => {
-      const created = await transaction.submission.create({
-        data: { attemptId: attempt.id, workJson: JSON.stringify(work) },
-      });
-      await transaction.evaluation.create({
-        data: {
-          submissionId: created.id,
-          rubricVersion: result.rubricVersion,
-          score: result.score,
-          maxScore: result.maxScore,
-          criteriaJson: JSON.stringify(result.criteria),
-        },
-      });
-      // A skill is only claimed when its rubric criterion was actually met,
-      // and the claim stores why. DemonstratedSkill is evidence, not a badge.
-      for (const link of simulationSkills) {
-        const criterion = link.checklistKey ? metByKey.get(link.checklistKey) : undefined;
-        if (!criterion?.met) continue;
-        await transaction.demonstratedSkill.create({
-          data: {
-            submissionId: created.id,
-            skillId: link.skillId,
-            basisJson: JSON.stringify({
-              checklistKey: criterion.key,
-              weight: criterion.weight,
-              labelEn: criterion.labelEn,
-              labelAr: criterion.labelAr,
-              evidence: criterion.evidence,
-            }),
-          },
-        });
-      }
-      await transaction.simulationAttempt.update({
-        where: { id: attempt.id },
-        data: { status: 'EVALUATED', submittedAt: new Date(), lastSavedAt: new Date() },
-      });
-      return created;
-    });
+    const recorded = await recordSubmission(attempt, work, deliveredKeys);
 
     const locale = resolveLocale(req.query.locale);
-    const evidence = await loadEvidence(submission.id);
-    res.status(201).json({ submissionId: submission.id, evidence: buildEvidence(evidence, locale, true) });
+    const evidence = await loadEvidence(recorded.submissionId);
+    res.status(201).json({ submissionId: recorded.submissionId, evidence: buildEvidence(evidence, locale, true) });
   });
 
   return router;

@@ -35,6 +35,8 @@ model User {
   sessions         Session[]
   attempts         SimulationAttempt[]
   mentorReviews    MentorReview[]      @relation("MentorReviewsByMentor")
+  mentorAssignments MentorAssignment[] @relation("MentorAssignments")
+  assignedLearners MentorAssignment[]  @relation("AssignedLearners")
   evidenceGranted  EvidenceShare[]     @relation("EvidenceSharedByLearner")
   evidenceRedeemed EvidenceShare[]     @relation("EvidenceRedeemedByEmployer")
   coachReport      CoachReport?
@@ -287,6 +289,22 @@ model DemonstratedSkill {
 
   @@unique([submissionId, skillId])
   @@index([skillId])
+}
+
+/// Which learners a mentor may review. Assignments are provisioned by seeding
+/// or an admin action only — no endpoint creates them from client input, so
+/// review access can never be self-granted. Scoping is enforced inside every
+/// mentor query (`attempt.user.assignedLearners`), never by post-filtering.
+model MentorAssignment {
+  id        String   @id @default(cuid())
+  mentorId  String
+  mentor    User     @relation("MentorAssignments", fields: [mentorId], references: [id], onDelete: Cascade)
+  learnerId String
+  learner   User     @relation("AssignedLearners", fields: [learnerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([mentorId, learnerId])
+  @@index([learnerId])
 }
 
 /// Human oversight remains separate from the advisory AI review.

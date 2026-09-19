@@ -7,6 +7,7 @@ import { loadEvidence } from '../submissions/service.js';
 import type { AiProvider } from './provider.js';
 import { parseAiJson } from './parse.js';
 import { REVIEW_MAX_OUTPUT_CHARS, REVIEW_PROMPT_VERSION, reviewSchema, type ReviewFeedback } from './schemas.js';
+export { type ReviewFeedback };
 import { REVIEW_SYSTEM_PROMPT } from './prompts.js';
 
 export interface StoredFeedback<T> {
