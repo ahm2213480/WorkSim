@@ -17,6 +17,11 @@ const schema = z.object({
   // during a walkthrough. 'auto' enables it in development only - never in
   // production (assignments are never self-granted there) or tests.
   DEMO_AUTO_ASSIGN_MENTOR: z.enum(['auto', 'true', 'false']).default('auto'),
+  // Dev/demo switch: when on, a learner who submits work shares their evidence
+  // with the seeded demo employer so the employer evidence list is populated
+  // during a walkthrough. 'auto' enables it in development only — never in
+  // production (sharing is consent-based there, never implicit) or tests.
+  DEMO_AUTO_SHARE_EVIDENCE: z.enum(['auto', 'true', 'false']).default('auto'),
   // AI provider (optional): without a key the platform stays fully functional
   // and AI features surface a clear "unavailable" state instead of failing.
   AI_API_KEY: z.string().min(1).optional(),

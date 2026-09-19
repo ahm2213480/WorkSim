@@ -67,5 +67,12 @@ check('queue item identifies the new learner', item?.learner?.name === 'Demo Ass
 const detail = await fetch(`${BASE}/api/mentor/submissions/${submitted.evidence?.id}?locale=EN`, { headers: { Cookie: mentorCookie } });
 check('mentor can open the new submission', detail.status === 200, `status=${detail.status}`);
 
+// 5. The demo employer's evidence list now contains that submission too.
+const employerCookie = await login('employer@worksim.dev');
+const evidence = await (await fetch(`${BASE}/api/employer/evidence?locale=EN`, { headers: { Cookie: employerCookie } })).json();
+const shared = evidence.submissions?.find((entry) => entry.id === submitted.evidence?.id);
+check('submission appears in the employer evidence list', !!shared,
+  shared ? `${shared.learner.name} / ${shared.simulation.title}` : `evidence=${evidence.submissions?.length} items`);
+
 console.log(failures === 0 ? '\nALL DEMO AUTO-ASSIGNMENT CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

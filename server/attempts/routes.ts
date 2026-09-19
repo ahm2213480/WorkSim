@@ -9,6 +9,7 @@ import { buildEvidence } from '../submissions/view.js';
 import { loadEvidence, recordSubmission } from '../submissions/service.js';
 import { MAX_FIELD_LENGTH, deliverDueEvents, parseSnapshot, parseWork } from './service.js';
 import { ensureDemoMentorAssignment } from '../mentor/demo-assignment.js';
+import { ensureDemoEvidenceShare } from '../employer/demo-share.js';
 
 export interface AttemptRoutesOptions {
   /** Dev/demo only (server/env.ts DEMO_AUTO_ASSIGN_MENTOR): assign a learner
@@ -16,6 +17,11 @@ export interface AttemptRoutesOptions {
    *  work is reviewable in the mentor queue during a walkthrough. Tests inject
    *  this explicitly, the same way they inject the cookie setting. */
   demoAutoAssignMentor?: boolean;
+  /** Dev/demo only (server/env.ts DEMO_AUTO_SHARE_EVIDENCE): share a
+   *  submitting learner's evidence with the seeded demo employer, so their
+   *  work appears in the employer evidence list during a walkthrough. Tests
+   *  inject this explicitly, the same way they inject the cookie setting. */
+  demoAutoShareEvidence?: boolean;
 }
 
 /** Attempt endpoints: read the workspace, save a draft, and see the learner's
@@ -167,6 +173,14 @@ export function attemptsRouter(options: AttemptRoutesOptions = {}) {
       // review-routing convenience, not part of saving the submission.
       await ensureDemoMentorAssignment(attempt.userId).catch((error: unknown) => {
         console.warn('Demo mentor auto-assignment failed', error);
+      });
+    }
+
+    if (options.demoAutoShareEvidence) {
+      // Same shape as the mentor convenience above: runs after the work is
+      // stored, can never fail the submission, and preserves a revoked grant.
+      await ensureDemoEvidenceShare(attempt.userId).catch((error: unknown) => {
+        console.warn('Demo evidence auto-share failed', error);
       });
     }
 

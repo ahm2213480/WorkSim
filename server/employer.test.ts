@@ -5,6 +5,7 @@ import { createApp } from './app.js';
 import { SESSION_COOKIE_NAME, createSession } from './auth/sessions.js';
 import { hashPassword } from './auth/passwords.js';
 import { prisma } from './db.js';
+import { DEMO_EMPLOYER_EMAIL } from './employer/demo-share.js';
 
 /** Phase 7 — employer work-evidence workflow, through the real HTTP app.
  *
@@ -23,6 +24,9 @@ import { prisma } from './db.js';
 
 const runId = Date.now().toString(36);
 const app = createApp({ cookieSecure: false, rateLimitPerWindow: 1000 });
+// The same app with the dev/demo switches on: proves the switches — not the
+// environment — are what make a freshly registered learner visible to staff.
+const demoApp = createApp({ cookieSecure: false, rateLimitPerWindow: 1000, demoAutoShareEvidence: true });
 
 const NOVASHOP = 'novashop-mobile-checkout';
 // Same required answers learner-flow uses; with authored event triggers the
@@ -74,10 +78,10 @@ async function share(learnerId: string, employerId: string) {
 }
 
 /** Runs the NovaShop task end to end for one learner and returns the submission id. */
-async function submitNovaShop(cookie: string): Promise<string> {
-  const started = await request(app).post(`/api/simulations/${NOVASHOP}/start`).set('Cookie', cookie);
+async function submitNovaShop(cookie: string, target: ReturnType<typeof createApp> = app): Promise<string> {
+  const started = await request(target).post(`/api/simulations/${NOVASHOP}/start`).set('Cookie', cookie);
   expect(started.status).toBe(201);
-  const submitted = await request(app)
+  const submitted = await request(target)
     .post(`/api/attempts/${started.body.attemptId as string}/submit`)
     .set('Cookie', cookie)
     .send({ work: NOVASHOP_REQUIRED });
@@ -297,5 +301,84 @@ describe('employer evidence workflow', () => {
     const evaluation = await prisma.evaluation.findFirst({ where: { submissionId } });
     expect(evaluation?.score).toBe(90);
     expect(await prisma.mentorReview.count({ where: { submissionId } })).toBe(0);
+  });
+});
+
+/** The seeded demo employer, created on demand so this file never depends on
+ *  the seed having run. `update: {}` leaves an already-seeded row untouched. */
+async function ensureDemoEmployer() {
+  const employer = await prisma.user.upsert({
+    where: { email: DEMO_EMPLOYER_EMAIL },
+    update: {},
+    create: { email: DEMO_EMPLOYER_EMAIL, name: 'Elena Employer', passwordHash: hashPassword('Correct-Horse-1'), role: 'EMPLOYER', locale: 'EN' },
+    select: { id: true, name: true },
+  });
+  const token = await createSession(employer.id);
+  return { user: employer, Cookie: `${SESSION_COOKIE_NAME}=${token}` };
+}
+
+/** Registers through the public endpoint, so the account is a real LEARNER
+ *  created exactly the way the UI creates one. */
+async function registerLearner(label: string, target: ReturnType<typeof createApp>) {
+  const email = `${label}-${runId}@test.dev`;
+  const response = await request(target)
+    .post('/api/auth/register')
+    .send({ name: `Learner ${label}`, email, password: 'Correct-Horse-1', locale: 'EN' });
+  expect(response.status).toBe(201);
+  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+  const token = await createSession(user.id);
+  return { user, Cookie: `${SESSION_COOKIE_NAME}=${token}` };
+}
+
+describe('demo evidence auto-share', () => {
+  it('stays off by default: a registered learner without a grant is invisible to the employer', async () => {
+    await ensureDemoEmployer();
+    const learner = await registerLearner('no-share', app);
+    const submissionId = await submitNovaShop(learner.Cookie, app);
+
+    expect(await prisma.evidenceShare.count({ where: { learnerId: learner.user.id } })).toBe(0);
+
+    const demoEmployer = await ensureDemoEmployer();
+    const list = await request(app).get('/api/employer/evidence').set('Cookie', demoEmployer.Cookie);
+    expect(list.status).toBe(200);
+    const ids = list.body.submissions.map((entry: { id: string }) => entry.id);
+    expect(ids).not.toContain(submissionId);
+  });
+
+  it('shares a grant-less learner with the demo employer on submission when enabled', async () => {
+    const demoEmployer = await ensureDemoEmployer();
+    const learner = await registerLearner('auto-share', demoApp);
+    const submissionId = await submitNovaShop(learner.Cookie, demoApp);
+
+    const list = await request(demoApp).get('/api/employer/evidence').set('Cookie', demoEmployer.Cookie);
+    expect(list.status).toBe(200);
+    const item = list.body.submissions.find((entry: { id: string }) => entry.id === submissionId);
+    expect(item).toMatchObject({
+      learner: { id: learner.user.id, name: learner.user.name },
+      mentorReview: 'PENDING',
+    });
+  });
+
+  it('never re-subscribes a learner who revoked the demo grant', async () => {
+    const demoEmployer = await ensureDemoEmployer();
+    const learner = await registerLearner('revoked-share', demoApp);
+    await share(learner.user.id, demoEmployer.user.id);
+    await prisma.evidenceShare.update({
+      where: { learnerId_employerId: { learnerId: learner.user.id, employerId: demoEmployer.user.id } },
+      data: { revokedAt: new Date() },
+    });
+
+    const submissionId = await submitNovaShop(learner.Cookie, demoApp);
+
+    // The revoked grant is preserved: submitting again must not undo the
+    // learner's explicit revocation.
+    const grant = await prisma.evidenceShare.findUniqueOrThrow({
+      where: { learnerId_employerId: { learnerId: learner.user.id, employerId: demoEmployer.user.id } },
+    });
+    expect(grant.revokedAt).not.toBeNull();
+
+    const list = await request(demoApp).get('/api/employer/evidence').set('Cookie', demoEmployer.Cookie);
+    const ids = list.body.submissions.map((entry: { id: string }) => entry.id);
+    expect(ids).not.toContain(submissionId);
   });
 });

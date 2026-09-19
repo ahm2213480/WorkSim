@@ -71,6 +71,8 @@ Demo data (after `npm run db:seed`): the seeded learner's NovaShop submission ca
 
 **Dev/demo convenience — auto-assignment.** Accounts registered from the UI are always `LEARNER`, and mentor visibility is scoped by `MentorAssignment`, which is deliberately never created from a request. During a walkthrough that would leave a fresh tester's submission unreviewable, so in **development only** a learner who submits work without any mentor is automatically assigned to the seeded demo mentor (`mentor@worksim.dev`) at submission time — their work then appears in that mentor's queue immediately. The behaviour is controlled by `DEMO_AUTO_ASSIGN_MENTOR` (`auto` = development only, the default; `true`/`false` to force it). It is conservative by design: it does nothing when the demo mentor does not exist, it never replaces an assignment an admin already provisioned, and **production never auto-assigns** — so the security rule that review access is never self-granted is preserved.
 
+**Dev/demo convenience — evidence auto-share.** The same walkthrough problem exists on the employer side: `EvidenceShare` is consent-based, so a fresh learner's submission would be invisible to the demo employer. In **development only**, submitting work also creates a share with the seeded demo employer (`employer@worksim.dev`), controlled by `DEMO_AUTO_SHARE_EVIDENCE` (`auto` = development only, the default; `true`/`false` to force it). It does nothing when the demo employer does not exist, it never touches an existing row — so a learner who revoked the grant is not re-subscribed — and **production never auto-shares**: consent stays explicit there.
+
 ## Employer evidence (Phase 7)
 
 Employers inspect candidate work evidence — what the candidate produced, how they approached it, and how they handled changing requirements. The flow:
@@ -96,6 +98,12 @@ The platform is fully bilingual (English/Arabic) with correct LTR/RTL:
 - **Language switch**: the header switch flips EN⇄AR instantly, mirrors `<html lang/dir>` (RTL for Arabic), and persists the choice in `localStorage`.
 - **Server-side locale resolution**: simulation/task/material/event/rubric content is stored as parallel EN/AR columns; every read endpoint accepts `?locale=EN|AR` and ships only the requested language.
 - **Registered preference**: the account's registered language (`User.locale`, chosen at registration) is adopted automatically after login/session restore — unless the user has explicitly picked a language in that browser, which always wins.
+
+## Mobile workspace
+
+The simulation workspace is the mobile-first screen (the task is the product). Below 900px the two columns become a `Work / Messages / Materials` tab strip so the learner never scrolls past a long form to reach the team's messages or the task materials; above 900px both columns are visible at once, from the same markup. Task materials are expandable in place — the bug report and acceptance criteria are the task's inputs — with prose wrapping and code scrolling internally, so nothing widens the page.
+
+Verified in a real browser, not just in tests: `node scripts/e2e-mobile-workspace.mjs` starts the built app and drives Chrome at a 390x844 phone viewport through login → start → panes → materials → draft save → reload → Arabic, asserting no horizontal overflow on every pane in both directions, tappable (44px+) save/submit, and that a draft survives a reload. Evidence: `screenshots/09-mobile-workspace.png`. The check uses `playwright-core` against the browser already installed on the machine (`CHROME_PATH` to override), so no browser download is needed.
 
 ## AI boundaries
 

@@ -23,6 +23,8 @@ export interface AppOptions {
   aiProvider?: AiProvider;
   /** Overrides DEMO_AUTO_ASSIGN_MENTOR (used by tests). */
   demoAutoAssignMentor?: boolean;
+  /** Overrides DEMO_AUTO_SHARE_EVIDENCE (used by tests). */
+  demoAutoShareEvidence?: boolean;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -56,6 +58,10 @@ export function createApp(options: AppOptions = {}) {
     // keeps the rule that mentor assignments are never created from a request.
     demoAutoAssignMentor: options.demoAutoAssignMentor
       ?? (env.DEMO_AUTO_ASSIGN_MENTOR === 'auto' ? env.NODE_ENV === 'development' : env.DEMO_AUTO_ASSIGN_MENTOR === 'true'),
+    // Dev/demo convenience: 'auto' resolves to development only, so production
+    // keeps the rule that evidence sharing is consent-based, never implicit.
+    demoAutoShareEvidence: options.demoAutoShareEvidence
+      ?? (env.DEMO_AUTO_SHARE_EVIDENCE === 'auto' ? env.NODE_ENV === 'development' : env.DEMO_AUTO_SHARE_EVIDENCE === 'true'),
   }));
   app.use('/api/submissions', submissionsRouter());
   // Mentor review endpoints: requireRole('MENTOR') per route, and every query
