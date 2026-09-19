@@ -73,6 +73,15 @@ Access rules, enforced on the server:
 
 Demo data (after `npm run db:seed`): the seeded learner's NovaShop submission is shared with `employer@worksim.dev` and carries a cached AI review and a completed mentor review, so all sections of the evidence page are populated.
 
+## Localization (Phase 8)
+
+The platform is fully bilingual (English/Arabic) with correct LTR/RTL:
+
+- **Dictionaries**: every user-facing string lives in `client/messages.ts` with exact EN/AR key parity (enforced by a test). Server messages are never shown raw — pages translate by machine-readable error code.
+- **Language switch**: the header switch flips EN⇄AR instantly, mirrors `<html lang/dir>` (RTL for Arabic), and persists the choice in `localStorage`.
+- **Server-side locale resolution**: simulation/task/material/event/rubric content is stored as parallel EN/AR columns; every read endpoint accepts `?locale=EN|AR` and ships only the requested language.
+- **Registered preference**: the account's registered language (`User.locale`, chosen at registration) is adopted automatically after login/session restore — unless the user has explicitly picked a language in that browser, which always wins.
+
 ## AI boundaries
 
 Planned AI features are post-submission review and personalized skill coaching. Both will be server-side, advisory, validated, cached, and safe to fail without losing submissions. Actual provider/model/prompts/cost limits will be documented alongside implementation. No AI service is currently called.

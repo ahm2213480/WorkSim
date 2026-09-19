@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { apiFetch } from './api';
+import { hasStoredLocale, useLocale } from './locale';
 
 export interface PublicUser {
   id: string;
@@ -20,6 +21,27 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Adopt the account's registered language once, after authentication: on a
+ *  fresh login/registration, and on a restored session. A language the user
+ *  explicitly picked in this browser (localStorage) always wins — the account
+ *  preference only fills the gap when no explicit choice exists. */
+function useAccountLocalePreference(user: PublicUser | null, status: 'loading' | 'ready') {
+  const { applyLocale } = useLocale();
+  const appliedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const preference = user?.locale === 'AR' || user?.locale === 'EN' ? user.locale.toLowerCase() : null;
+    if (!preference) return;
+    // Re-apply only when the account (or its preference) actually changes, so
+    // an in-session manual switch is never fought over on re-renders.
+    const key = `${user?.id ?? ''}:${preference}`;
+    if (appliedRef.current === key) return;
+    appliedRef.current = key;
+    if (hasStoredLocale()) return;
+    applyLocale(preference === 'ar' ? 'ar' : 'en');
+  }, [user, status, applyLocale]);
+}
+
 /** Single source of truth for "who is signed in". The session itself lives in
  *  an HttpOnly cookie; the context only mirrors what GET /api/auth/me returns.
  *  A failed session check simply renders the app as signed out — a stale or
@@ -27,6 +49,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
+  useAccountLocalePreference(user, status);
 
   useEffect(() => {
     let active = true;

@@ -9,13 +9,25 @@ export type Dictionary = Record<MessageKey, string>;
 interface LocaleContextValue {
   locale: Locale;
   toggleLocale: () => void;
+  /** Sets the app language programmatically (used by the auth layer to adopt
+   *  the account's registered preference). Also persists the choice. */
+  applyLocale: (next: Locale) => void;
   t: Dictionary;
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
+const LOCALE_STORAGE_KEY = 'worksim-locale';
+
+/** Whether the user (or a previous session) explicitly chose a language in
+ *  this browser. When true, the account preference must not override it. */
+export function hasStoredLocale(): boolean {
+  try { return localStorage.getItem(LOCALE_STORAGE_KEY) !== null; }
+  catch { return false; }
+}
+
 function initialLocale(): Locale {
-  try { return localStorage.getItem('worksim-locale') === 'ar' ? 'ar' : 'en'; }
+  try { return localStorage.getItem(LOCALE_STORAGE_KEY) === 'ar' ? 'ar' : 'en'; }
   catch { return 'en'; }
 }
 
@@ -35,6 +47,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const value = useMemo<LocaleContextValue>(() => ({
     locale,
     toggleLocale: () => setLocale((current) => (current === 'en' ? 'ar' : 'en')),
+    applyLocale: (next) => {
+      setLocale(next);
+      try { localStorage.setItem(LOCALE_STORAGE_KEY, next); } catch { /* Language still works when storage is blocked. */ }
+    },
     t: messages[locale],
   }), [locale]);
 
