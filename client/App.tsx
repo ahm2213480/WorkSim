@@ -4,9 +4,11 @@ import { AuthProvider, useAuth } from './auth';
 import { LocaleProvider, useLocale } from './locale';
 import { Catalog } from './pages/Catalog';
 import { Dashboard } from './pages/Dashboard';
+import { EmployerEvidenceList, EmployerEvidencePage } from './pages/Employer';
 import { EvidencePage } from './pages/Evidence';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
+import { MentorQueue, MentorReviewPage } from './pages/Mentor';
 import { NotFound } from './pages/NotFound';
 import { Register } from './pages/Register';
 import { SimulationDetail } from './pages/SimulationDetail';
@@ -37,6 +39,8 @@ function AppHeader() {
         {user ? (
           <>
             <Link className="nav-link" to="/dashboard">{t.dashboard}</Link>
+            {user.role === 'MENTOR' && <Link className="nav-link" to="/mentor">{t.mentorNav}</Link>}
+            {user.role === 'EMPLOYER' && <Link className="nav-link" to="/employer">{t.employerNav}</Link>}
             <Link className="nav-link" to="/simulations">{t.catalog}</Link>
             <button className="language" onClick={() => { void logout().finally(() => navigate('/')); }}>{t.logout}</button>
           </>
@@ -65,6 +69,10 @@ function Shell() {
         <Route path="/simulations" element={<Catalog />} />
         <Route path="/simulations/:slug" element={<SimulationDetail />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/mentor" element={<RequireAuth><MentorQueue /></RequireAuth>} />
+        <Route path="/mentor/:submissionId" element={<RequireAuth><MentorReviewPage /></RequireAuth>} />
+        <Route path="/employer" element={<RequireAuth><EmployerEvidenceList /></RequireAuth>} />
+        <Route path="/employer/evidence/:submissionId" element={<RequireAuth><EmployerEvidencePage /></RequireAuth>} />
         <Route path="/workspace/:attemptId" element={<RequireAuth><Workspace /></RequireAuth>} />
         <Route path="/evidence/:submissionId" element={<RequireAuth><EvidencePage /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />

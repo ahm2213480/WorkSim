@@ -56,6 +56,23 @@ Two required scenarios:
 
 These are fictional companies, not real employer integrations. Their full materials and workflows are planned, not implemented.
 
+## Employer evidence (Phase 7)
+
+Employers inspect candidate work evidence — what the candidate produced, how they approached it, and how they handled changing requirements. The flow:
+
+1. Sign in as `employer@worksim.dev` (demo password on the login page).
+2. **Candidate evidence** (`/employer`) lists every completed submission a candidate shared with this employer: candidate name, simulation/company/role, score, demonstrated skills, and whether a mentor review is completed.
+3. **View evidence** (`/employer/evidence/:submissionId`) shows the full narrative: candidate, assignment context, the submitted work, the deterministic evaluation with per-criterion evidence, demonstrated skills, the recorded task timeline (events the candidate handled), cached AI feedback (advisory), and completed mentor feedback.
+
+Access rules, enforced on the server:
+
+- Evidence is **consent-based** (`EvidenceShare`): an employer sees only submissions from learners who granted them access. There is no public candidate search; every query scopes on the active grant, so an unconsented or revoked id returns 404 indistinguishable from a missing one.
+- The workflow is **read-only**: the employer router defines no write routes, and employer payloads exclude emails, password hashes, sessions and other private fields.
+- AI feedback is shown only from the stored cache (READY rows) — viewing evidence never calls the AI provider, and missing AI or mentor feedback renders a neutral "not available" state without breaking the page.
+- The deterministic evaluation is the platform's score of record; AI and mentor feedback are advisory context, not hiring recommendations.
+
+Demo data (after `npm run db:seed`): the seeded learner's NovaShop submission is shared with `employer@worksim.dev` and carries a cached AI review and a completed mentor review, so all sections of the evidence page are populated.
+
 ## AI boundaries
 
 Planned AI features are post-submission review and personalized skill coaching. Both will be server-side, advisory, validated, cached, and safe to fail without losing submissions. Actual provider/model/prompts/cost limits will be documented alongside implementation. No AI service is currently called.

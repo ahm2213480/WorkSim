@@ -9,6 +9,8 @@ import { getEnv } from './env.js';
 import { HttpError } from './http-error.js';
 import { simulationsRouter } from './simulations/routes.js';
 import { submissionsRouter } from './submissions/routes.js';
+import { mentorRouter } from './mentor/routes.js';
+import { employerRouter } from './employer/routes.js';
 
 export interface AppOptions {
   /** Directory of the built client assets (production only). */
@@ -49,6 +51,12 @@ export function createApp(options: AppOptions = {}) {
   // Attempts and submissions are always scoped to the signed-in learner.
   app.use('/api/attempts', attemptsRouter());
   app.use('/api/submissions', submissionsRouter());
+  // Mentor review endpoints: requireRole('MENTOR') per route, and every query
+  // is scoped to the learners assigned to that mentor (server/mentor).
+  app.use('/api/mentor', mentorRouter());
+  // Employer evidence endpoints: requireRole('EMPLOYER') per route, read-only,
+  // and every query is scoped to learners who granted consent (server/employer).
+  app.use('/api/employer', employerRouter());
   // AI endpoints (review + coach) are owned by the signed-in user and rate
   // limited for cost; the provider is injectable so tests use a fake.
   app.use('/api', aiRouter(options.aiProvider ?? defaultProvider()));
