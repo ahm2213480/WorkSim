@@ -23,11 +23,11 @@ Open http://127.0.0.1:5173. Vite proxies `/api` to Express at http://127.0.0.1:3
 
 Environment overrides are optional: copy `.env.example` to `.env` if needed. Never commit `.env`.
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `NODE_ENV` | `development` | `production` enables serving the built frontend |
-| `HOST` | `127.0.0.1` | Use `0.0.0.0` on a hosting service if required |
-| `PORT` | `3001` | Backend listening port; dev proxy currently targets 3001 |
+| Variable   | Default       | Purpose                                                  |
+| ---------- | ------------- | -------------------------------------------------------- |
+| `NODE_ENV` | `development` | `production` enables serving the built frontend          |
+| `HOST`     | `127.0.0.1`   | Use `0.0.0.0` on a hosting service if required           |
+| `PORT`     | `3001`        | Backend listening port; dev proxy currently targets 3001 |
 
 Do not put secrets in frontend variables. AI and database configuration will be documented when implemented.
 
@@ -51,6 +51,7 @@ Run `npm ci`, `npm run build`, and `npm start` with `NODE_ENV=production` config
 Learners are the primary users: register → browse → enter a fictional company → investigate → save decisions → handle changes → submit → reflect → share evidence. Mentors add human oversight; employers inspect consented work evidence; admins manage simulation content.
 
 Two required scenarios:
+
 - **NovaShop / Junior Frontend Developer:** investigate mobile checkout failures, propose a patch, respond to a guest-checkout clarification, and provide a test plan.
 - **MarketFlow / Junior Data Analyst:** analyze a synthetic sales dataset, explain a decline with reproducible calculations, and recommend action with limitations.
 
@@ -95,3 +96,7 @@ AI is intentionally **not** used for authentication, authorization, CRUD, naviga
 - `screenshots/README.md`: final capture plan; no fabricated screenshots.
 
 The final README must expand with the actual schema, auth/security design, simulation rubric, AI prompts/output/failure/cost behavior, mentor and employer flows, test results, real screenshots, and deployment limitations. Those claims are intentionally not made before implementation.
+
+البريد: mentor@worksim.dev
+
+كلمة السر: Worksim-demo-1
