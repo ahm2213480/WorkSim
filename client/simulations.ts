@@ -22,7 +22,7 @@ export interface SimulationListItem {
 
 export interface SimulationDetail extends SimulationListItem {
   brief: string;
-  materials: { id: string; kind: string; title: string }[];
+  materials: { id: string; kind: string; title: string; content: string }[];
   tasks: { id: string; order: number; title: string }[];
 }
 

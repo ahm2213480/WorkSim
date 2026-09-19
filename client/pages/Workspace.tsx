@@ -172,6 +172,15 @@ export function Workspace() {
 
           <h2>{t.workspaceYourWorkTitle}</h2>
           <p className="muted save-state" aria-live="polite">{saveLabel}</p>
+          {/* The buggy source, in place: the learner reads the actual broken
+              component next to the work they submit, not only in the sidebar. */}
+          {materials.filter((material) => material.kind === 'CODE').map((material) => (
+            <section className="ai-section" key={material.id} aria-labelledby={`source-${material.id}`}>
+              <h3 id={`source-${material.id}`}>{t.workspaceSourceTitle}: {material.title}</h3>
+              <p className="muted">{t.workspaceSourceHint}</p>
+              <pre className="code-view" dir="ltr"><code>{material.content}</code></pre>
+            </section>
+          ))}
           {attempt.task.fields.map((field) => (
             <div className="field" key={field.key}>
               <label htmlFor={`field-${field.key}`}>
@@ -179,15 +188,18 @@ export function Workspace() {
                 {field.required && <span className="muted"> *</span>}
               </label>
               {field.kind === 'code' || field.multiline ? (
-                <textarea
-                  id={`field-${field.key}`}
-                  className={field.kind === 'code' ? 'code-input' : undefined}
-                  dir="ltr"
-                  rows={field.kind === 'code' ? 10 : 5}
-                  value={draft[field.key] ?? ''}
-                  onChange={(event) => updateField(field.key, event.target.value)}
-                  aria-invalid={missing.includes(field.key) || undefined}
-                />
+                <>
+                  {field.kind === 'code' && <p className="field-hint">{t.workspaceCodeFieldHint}</p>}
+                  <textarea
+                    id={`field-${field.key}`}
+                    className={field.kind === 'code' ? 'code-input' : undefined}
+                    dir="ltr"
+                    rows={field.kind === 'code' ? 10 : 5}
+                    value={draft[field.key] ?? ''}
+                    onChange={(event) => updateField(field.key, event.target.value)}
+                    aria-invalid={missing.includes(field.key) || undefined}
+                  />
+                </>
               ) : (
                 <input
                   id={`field-${field.key}`}

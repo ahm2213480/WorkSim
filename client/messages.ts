@@ -54,6 +54,9 @@ export const messages = {
     detailStart: 'Start simulation', detailResume: 'Resume where you left off',
     detailSignIn: 'Sign in to start', detailBriefNote: 'Reading the brief does not start the clock — only starting an attempt does.',
     backToCatalog: 'Back to simulations',
+    // Workspace source-code pane.
+    workspaceSourceTitle: 'Buggy component', workspaceSourceHint: 'Read the component under suspicion while you work. The fix you submit belongs in the code field below.',
+    workspaceCodeFieldHint: 'Paste or write your fixed component code here.',
     // Simulation workspace.
     workspaceTaskTitle: 'Your task', workspaceInstructionsTitle: 'Instructions',
     workspaceMaterialsTitle: 'Materials', workspaceInboxTitle: 'Messages from the team',
@@ -184,6 +187,9 @@ export const messages = {
     detailStart: 'ابدأ المحاكاة', detailResume: 'تابع من حيث توقفت',
     detailSignIn: 'سجّل الدخول للبدء', detailBriefNote: 'قراءة السياق لا تُشغّل المؤقّت — البدء الفعلي هو ما يبدأ المحاولة.',
     backToCatalog: 'العودة إلى المحاكاات',
+    // جزء الكود في مساحة العمل.
+    workspaceSourceTitle: 'المكوّن المكسور', workspaceSourceHint: 'اقرأ المكوّن المشتبه به أثناء عملك. الإصلاح الذي ستسلّمه يوضع في حقل الكود أدناه.',
+    workspaceCodeFieldHint: 'الصق أو اكتب هنا شيفرة المكوّن بعد إصلاحه.',
     // مساحة العمل.
     workspaceTaskTitle: 'مهمتك', workspaceInstructionsTitle: 'التعليمات',
     workspaceMaterialsTitle: 'المواد', workspaceInboxTitle: 'رسائل من الفريق',

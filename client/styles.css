@@ -95,6 +95,9 @@ footer { padding-block: 24px; border-top: 1px solid #dce4dd; color: #51635b; fon
 .field textarea, .code-input { width: 100%; padding: 12px 14px; border: 1px solid #becbc2; border-radius: 8px; background: white; font: inherit; color: inherit; resize: vertical; }
 .field textarea[aria-invalid='true'], .field input[aria-invalid='true'] { border-color: #b3552a; outline-color: #b3552a; }
 .code-input { font-family: Consolas, 'Courier New', monospace; font-size: 14px; line-height: 1.5; background: #f4f6f2; }
+/* Read-only source pane in the workspace (the buggy component). */
+.code-view { margin: 10px 0 0; padding: 14px 16px; background: #f4f6f2; border: 1px solid #d3ddd0; border-radius: 10px; overflow-x: auto; }
+.code-view code { font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.55; white-space: pre; }
 .workspace-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .workspace-actions .button { margin-top: 12px; }
 .inbox { list-style: none; padding: 0; display: grid; gap: 14px; }
