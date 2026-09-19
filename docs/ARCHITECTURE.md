@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Status: scaffold implemented; database/auth/product decisions below are proposals until their phases ship.
+Status: implemented and shipped — the decisions below describe the running production system (all delivery phases verified, not proposals or scaffold).
 
 ## ADR 001 — Straightforward React / Express monolith
 
