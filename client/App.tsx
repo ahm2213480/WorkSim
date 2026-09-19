@@ -2,6 +2,9 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate 
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth';
 import { LocaleProvider, useLocale } from './locale';
+import { AdminCatalog } from './pages/Admin';
+import { AdminSimulationDetail } from './pages/AdminDetail';
+import { AdminNewSimulation } from './pages/AdminForm';
 import { Catalog } from './pages/Catalog';
 import { Dashboard } from './pages/Dashboard';
 import { EmployerEvidenceList, EmployerEvidencePage } from './pages/Employer';
@@ -41,8 +44,9 @@ function AppHeader() {
             <Link className="nav-link" to="/dashboard">{t.dashboard}</Link>
             {user.role === 'MENTOR' && <Link className="nav-link" to="/mentor">{t.mentorNav}</Link>}
             {user.role === 'EMPLOYER' && <Link className="nav-link" to="/employer">{t.employerNav}</Link>}
+            {user.role === 'ADMIN' && <Link className="nav-link" to="/admin">{t.adminNav}</Link>}
             <Link className="nav-link" to="/simulations">{t.catalog}</Link>
-            <button className="language" onClick={() => { void logout().finally(() => navigate('/')); }}>{t.logout}</button>
+            <button className="nav-button" onClick={() => { void logout().finally(() => navigate('/')); }}>{t.logout}</button>
           </>
         ) : (
           <>
@@ -73,6 +77,9 @@ function Shell() {
         <Route path="/mentor/:submissionId" element={<RequireAuth><MentorReviewPage /></RequireAuth>} />
         <Route path="/employer" element={<RequireAuth><EmployerEvidenceList /></RequireAuth>} />
         <Route path="/employer/evidence/:submissionId" element={<RequireAuth><EmployerEvidencePage /></RequireAuth>} />
+        <Route path="/admin" element={<RequireAuth><AdminCatalog /></RequireAuth>} />
+        <Route path="/admin/simulations/new" element={<RequireAuth><AdminNewSimulation /></RequireAuth>} />
+        <Route path="/admin/simulations/:id" element={<RequireAuth><AdminSimulationDetail /></RequireAuth>} />
         <Route path="/workspace/:attemptId" element={<RequireAuth><Workspace /></RequireAuth>} />
         <Route path="/evidence/:submissionId" element={<RequireAuth><EvidencePage /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />

@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import path from 'node:path';
+import { adminRouter } from './admin/routes.js';
 import { attemptsRouter } from './attempts/routes.js';
 import { authRouter } from './auth/routes.js';
 import { aiRouter } from './ai/routes.js';
@@ -70,6 +71,10 @@ export function createApp(options: AppOptions = {}) {
   // Employer evidence endpoints: requireRole('EMPLOYER') per route, read-only,
   // and every query is scoped to learners who granted consent (server/employer).
   app.use('/api/employer', employerRouter());
+  // Admin catalog endpoints: requireRole('ADMIN') per route; simulations and
+  // tasks are never deleted through the API (learner evidence references
+  // them), only created/edited/activated.
+  app.use('/api/admin', adminRouter());
   // AI endpoints (review + coach) are owned by the signed-in user and rate
   // limited for cost; the provider is injectable so tests use a fake.
   app.use('/api', aiRouter(options.aiProvider ?? defaultProvider()));
