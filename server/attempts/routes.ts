@@ -8,6 +8,15 @@ import { pick } from '../simulations/view.js';
 import { buildEvidence } from '../submissions/view.js';
 import { loadEvidence, recordSubmission } from '../submissions/service.js';
 import { MAX_FIELD_LENGTH, deliverDueEvents, parseSnapshot, parseWork } from './service.js';
+import { ensureDemoMentorAssignment } from '../mentor/demo-assignment.js';
+
+export interface AttemptRoutesOptions {
+  /** Dev/demo only (server/env.ts DEMO_AUTO_ASSIGN_MENTOR): assign a learner
+   *  who has no mentor to the seeded demo mentor when they submit, so their
+   *  work is reviewable in the mentor queue during a walkthrough. Tests inject
+   *  this explicitly, the same way they inject the cookie setting. */
+  demoAutoAssignMentor?: boolean;
+}
 
 /** Attempt endpoints: read the workspace, save a draft, and see the learner's
  *  own finished work.
@@ -15,7 +24,7 @@ import { MAX_FIELD_LENGTH, deliverDueEvents, parseSnapshot, parseWork } from './
  *  Every handler re-scopes the query by `userId` instead of checking ownership
  *  separately, so one learner can never read another learner's work product
  *  even if they guess an attempt id. */
-export function attemptsRouter() {
+export function attemptsRouter(options: AttemptRoutesOptions = {}) {
   const router = Router();
   router.use(requireAuth);
 
@@ -151,6 +160,15 @@ export function attemptsRouter() {
     const deliveredKeys = new Set(deliveries.map((delivery) => delivery.event.key));
 
     const recorded = await recordSubmission(attempt, work, deliveredKeys);
+
+    if (options.demoAutoAssignMentor) {
+      // Runs after the work is safely stored, so a failure here can never turn
+      // a saved submission into an error for the learner: assignment is a
+      // review-routing convenience, not part of saving the submission.
+      await ensureDemoMentorAssignment(attempt.userId).catch((error: unknown) => {
+        console.warn('Demo mentor auto-assignment failed', error);
+      });
+    }
 
     const locale = resolveLocale(req.query.locale);
     const evidence = await loadEvidence(recorded.submissionId);

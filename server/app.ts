@@ -21,6 +21,8 @@ export interface AppOptions {
   rateLimitPerWindow?: number;
   /** Overrides the AI provider (tests inject a fake; default reads env). */
   aiProvider?: AiProvider;
+  /** Overrides DEMO_AUTO_ASSIGN_MENTOR (used by tests). */
+  demoAutoAssignMentor?: boolean;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -49,7 +51,12 @@ export function createApp(options: AppOptions = {}) {
   // Catalog reads are public; starting a simulation is not (see simulations/routes.ts).
   app.use('/api/simulations', simulationsRouter());
   // Attempts and submissions are always scoped to the signed-in learner.
-  app.use('/api/attempts', attemptsRouter());
+  app.use('/api/attempts', attemptsRouter({
+    // Dev/demo convenience: 'auto' resolves to development only, so production
+    // keeps the rule that mentor assignments are never created from a request.
+    demoAutoAssignMentor: options.demoAutoAssignMentor
+      ?? (env.DEMO_AUTO_ASSIGN_MENTOR === 'auto' ? env.NODE_ENV === 'development' : env.DEMO_AUTO_ASSIGN_MENTOR === 'true'),
+  }));
   app.use('/api/submissions', submissionsRouter());
   // Mentor review endpoints: requireRole('MENTOR') per route, and every query
   // is scoped to the learners assigned to that mentor (server/mentor).

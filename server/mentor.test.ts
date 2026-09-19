@@ -5,6 +5,7 @@ import { createApp } from './app.js';
 import { SESSION_COOKIE_NAME, createSession } from './auth/sessions.js';
 import { hashPassword } from './auth/passwords.js';
 import { prisma } from './db.js';
+import { DEMO_MENTOR_EMAIL } from './mentor/demo-assignment.js';
 
 /** Phase 6 — mentor review workflow, through the real HTTP app.
  *
@@ -22,6 +23,9 @@ import { prisma } from './db.js';
 
 const runId = Date.now().toString(36);
 const app = createApp({ cookieSecure: false, rateLimitPerWindow: 1000 });
+// The same app with the dev/demo switch on: proves the switch - not the
+// environment - is what makes a freshly registered learner reviewable.
+const demoApp = createApp({ cookieSecure: false, rateLimitPerWindow: 1000, demoAutoAssignMentor: true });
 
 const NOVASHOP = 'novashop-mobile-checkout';
 // Same required answers learner-flow uses; with authored event triggers the
@@ -62,10 +66,10 @@ async function assign(mentorId: string, learnerId: string) {
 }
 
 /** Runs the NovaShop task end to end for one learner and returns the submission id. */
-async function submitNovaShop(cookie: string): Promise<string> {
-  const started = await request(app).post(`/api/simulations/${NOVASHOP}/start`).set('Cookie', cookie);
+async function submitNovaShop(cookie: string, target: ReturnType<typeof createApp> = app): Promise<string> {
+  const started = await request(target).post(`/api/simulations/${NOVASHOP}/start`).set('Cookie', cookie);
   expect(started.status).toBe(201);
-  const submitted = await request(app)
+  const submitted = await request(target)
     .post(`/api/attempts/${started.body.attemptId as string}/submit`)
     .set('Cookie', cookie)
     .send({ work: NOVASHOP_REQUIRED });
@@ -391,6 +395,76 @@ describe('mentor review workflow', () => {
     // proves nothing here called the provider: stored rows are read, never made.
     const arabicDetail = await request(app).get(`/api/mentor/submissions/${submissionId}?locale=AR`).set('Cookie', mentor.Cookie);
     expect(arabicDetail.body.aiReview).toBeNull();
+  });
+});
+
+/** The seeded demo mentor, created on demand so this file never depends on the
+ *  seed having run. `update: {}` leaves an already-seeded row untouched. */
+async function ensureDemoMentor() {
+  const mentor = await prisma.user.upsert({
+    where: { email: DEMO_MENTOR_EMAIL },
+    update: {},
+    create: { email: DEMO_MENTOR_EMAIL, name: 'Omar Mentor', passwordHash: hashPassword('Correct-Horse-1'), role: 'MENTOR', locale: 'EN' },
+    select: { id: true, name: true },
+  });
+  const token = await createSession(mentor.id);
+  return { user: mentor, Cookie: `${SESSION_COOKIE_NAME}=${token}` };
+}
+
+/** Registers through the public endpoint, so the account is a real LEARNER
+ *  created exactly the way the UI creates one. */
+async function registerLearner(label: string, target: ReturnType<typeof createApp>) {
+  const email = `${label}-${runId}@test.dev`;
+  const response = await request(target)
+    .post('/api/auth/register')
+    .send({ name: `Learner ${label}`, email, password: 'Correct-Horse-1', locale: 'EN' });
+  expect(response.status).toBe(201);
+  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+  const token = await createSession(user.id);
+  return { user, Cookie: `${SESSION_COOKIE_NAME}=${token}` };
+}
+
+describe('demo mentor auto-assignment', () => {
+  it('stays off by default: a registered learner without a mentor is not reviewable', async () => {
+    await ensureDemoMentor();
+    const learner = await registerLearner('no-assign', app);
+    const submissionId = await submitNovaShop(learner.Cookie, app);
+
+    expect(await prisma.mentorAssignment.count({ where: { learnerId: learner.user.id } })).toBe(0);
+
+    const demoMentor = await ensureDemoMentor();
+    const queue = await request(app).get('/api/mentor/submissions').set('Cookie', demoMentor.Cookie);
+    expect(queue.status).toBe(200);
+    const ids = queue.body.submissions.map((entry: { id: string }) => entry.id);
+    expect(ids).not.toContain(submissionId);
+  });
+
+  it('assigns a mentor-less learner to the demo mentor on submission when enabled', async () => {
+    const demoMentor = await ensureDemoMentor();
+    const learner = await registerLearner('auto-assign', demoApp);
+    const submissionId = await submitNovaShop(learner.Cookie, demoApp);
+
+    const queue = await request(demoApp).get('/api/mentor/submissions').set('Cookie', demoMentor.Cookie);
+    expect(queue.status).toBe(200);
+    const item = queue.body.submissions.find((entry: { id: string }) => entry.id === submissionId);
+    expect(item).toMatchObject({
+      learner: { id: learner.user.id, name: learner.user.name },
+      reviewStatus: 'NONE',
+    });
+  });
+
+  it('never replaces a mentor an admin already provisioned', async () => {
+    const demoMentor = await ensureDemoMentor();
+    const otherMentor = await createUser('pre-assigned-mentor', 'MENTOR');
+    const learner = await registerLearner('pre-assigned', demoApp);
+    await assign(otherMentor.user.id, learner.user.id);
+
+    await submitNovaShop(learner.Cookie, demoApp);
+
+    const assignments = await prisma.mentorAssignment.findMany({ where: { learnerId: learner.user.id } });
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]!.mentorId).toBe(otherMentor.user.id);
+    expect(assignments[0]!.mentorId).not.toBe(demoMentor.user.id);
   });
 });
 

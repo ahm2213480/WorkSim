@@ -69,6 +69,8 @@ The learner side is connected end to end: the evidence page (`/evidence/:submiss
 
 Demo data (after `npm run db:seed`): the seeded learner's NovaShop submission carries a completed mentor review, so both the mentor queue and the learner's mentor-feedback section are populated out of the box.
 
+**Dev/demo convenience — auto-assignment.** Accounts registered from the UI are always `LEARNER`, and mentor visibility is scoped by `MentorAssignment`, which is deliberately never created from a request. During a walkthrough that would leave a fresh tester's submission unreviewable, so in **development only** a learner who submits work without any mentor is automatically assigned to the seeded demo mentor (`mentor@worksim.dev`) at submission time — their work then appears in that mentor's queue immediately. The behaviour is controlled by `DEMO_AUTO_ASSIGN_MENTOR` (`auto` = development only, the default; `true`/`false` to force it). It is conservative by design: it does nothing when the demo mentor does not exist, it never replaces an assignment an admin already provisioned, and **production never auto-assigns** — so the security rule that review access is never self-granted is preserved.
+
 ## Employer evidence (Phase 7)
 
 Employers inspect candidate work evidence — what the candidate produced, how they approached it, and how they handled changing requirements. The flow:
