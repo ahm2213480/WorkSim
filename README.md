@@ -119,6 +119,20 @@ AI is intentionally **not** used for authentication, authorization, CRUD, naviga
 
 The final README must expand with the actual schema, auth/security design, simulation rubric, AI prompts/output/failure/cost behavior, mentor and employer flows, test results, real screenshots, and deployment limitations. Those claims are intentionally not made before implementation.
 
-البريد: mentor@worksim.dev
+## Demo accounts
 
-كلمة السر: Worksim-demo-1
+Public registration only ever creates `LEARNER` accounts. Staff roles are
+provisioned by `npm run db:seed` for the assessment walkthrough. Every demo
+account uses the password shown on the login page (from `SEED_DEMO_PASSWORD`
+in your local `.env` — the default is `Worksim-demo-1`; never commit `.env`):
+
+| Role     | Email                | Opens in the app                  |
+| -------- | -------------------- | --------------------------------- |
+| Learner  | `learner@worksim.dev`  | Simulation workspace              |
+| Mentor   | `mentor@worksim.dev`   | Mentor queue (`/mentor`)          |
+| Employer | `employer@worksim.dev` | Candidate evidence (`/employer`)  |
+| Admin    | `admin@worksim.dev`    | Admin area                        |
+
+The seed also wires the demo walkthrough: `learner@worksim.dev` is assigned to
+the demo mentor, shares evidence with the demo employer, and has a completed
+submission with a cached AI review and a completed mentor review.
