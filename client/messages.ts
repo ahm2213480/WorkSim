@@ -82,6 +82,9 @@ export const messages = {
     aiGenerate: 'Generate AI feedback', aiRegenerate: 'Try again', aiGenerating: 'Generating AI feedback…',
     aiUnavailable: 'AI feedback is unavailable right now. Your submission and its evaluation are saved and unaffected.',
     aiStrengths: 'Strengths', aiImprove: 'Areas to improve', aiActions: 'Actionable recommendations', aiSummary: 'Reviewer summary',
+    // Mentor feedback on the learner's evidence page.
+    learnerMentorTitle: 'Mentor feedback', learnerMentorPending: 'Pending mentor review',
+    learnerMentorNote: 'A human mentor reviews the quality of your work on top of the automatic checks. It never changes your score.',
     coachTitle: 'Skill coach', coachIntro: 'A coaching view across your completed simulations: what the evidence shows and what to do next.',
     coachGenerate: 'Get coaching guidance', coachRegenerate: 'Refresh coaching guidance', coachGenerating: 'Preparing coaching guidance…',
     coachInsufficientTitle: 'Not enough completed work yet',
@@ -215,6 +218,9 @@ export const messages = {
     aiGenerate: 'اطلب ملاحظات الذكاء الاصطناعي', aiRegenerate: 'حاول مجددًا', aiGenerating: 'جارٍ توليد الملاحظات…',
     aiUnavailable: 'ملاحظات الذكاء الاصطناعي غير متاحة الآن. تسليمك وتقييمك محفوظان ولم يتأثرا.',
     aiStrengths: 'نقاط القوة', aiImprove: 'جوانب للتحسين', aiActions: 'توصيات قابلة للتنفيذ', aiSummary: 'ملخّص المراجع',
+    // ملاحظات المرشد في صفحة دليل المتعلم.
+    learnerMentorTitle: 'ملاحظات المرشد', learnerMentorPending: 'في انتظار مراجعة المرشد',
+    learnerMentorNote: 'يراجع مرشد بشري جودة عملك فوق الفحوص الآلية، ولا تغيّر ملاحظاته درجتك أبدًا.',
     coachTitle: 'المدرب المهاري', coachIntro: 'نظرة تدريبية عبر محاكااتك المكتملة: ما يُظهره الدليل وما الخطوة التالية.',
     coachGenerate: 'اطلب الإرشاد', coachRegenerate: 'تحديث الإرشاد', coachGenerating: 'جارٍ إعداد الإرشاد…',
     coachInsufficientTitle: 'الأعمال المكتملة غير كافية بعد',

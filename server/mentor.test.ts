@@ -298,6 +298,40 @@ describe('mentor review workflow', () => {
     expect(completed.body.review).toMatchObject({ feedback: 'Saved earlier.', status: 'COMPLETED' });
   });
 
+  it('surfaces the completed mentor feedback to the learner, drafts stay hidden', async () => {
+    const mentor = await createUser('feedback-view-mentor', 'MENTOR');
+    const learner = await createUser('feedback-view-learner', 'LEARNER');
+    await assign(mentor.user.id, learner.user.id);
+    const submissionId = await submitNovaShop(learner.Cookie);
+
+    // Before any review: the learner payload has no feedback at all.
+    const before = await request(app).get(`/api/submissions/${submissionId}`).set('Cookie', learner.Cookie);
+    expect(before.status).toBe(200);
+    expect(before.body.mentorFeedback).toBeNull();
+
+    // A draft is invisible to the learner.
+    await request(app)
+      .put(`/api/mentor/submissions/${submissionId}/review`)
+      .set('Cookie', mentor.Cookie)
+      .send({ feedback: 'Draft the learner must not see yet.' });
+    const duringDraft = await request(app).get(`/api/submissions/${submissionId}`).set('Cookie', learner.Cookie);
+    expect(duringDraft.body.mentorFeedback).toBeNull();
+
+    // Completing publishes it with the reviewer's name.
+    await request(app)
+      .post(`/api/mentor/submissions/${submissionId}/review/complete`)
+      .set('Cookie', mentor.Cookie)
+      .send({ feedback: 'Strong write-up; add the desktop regression step.' });
+    const after = await request(app).get(`/api/submissions/${submissionId}`).set('Cookie', learner.Cookie);
+    expect(after.status).toBe(200);
+    expect(after.body.mentorFeedback).toMatchObject({
+      reviewerName: mentor.user.name,
+      feedback: 'Strong write-up; add the desktop regression step.',
+    });
+    // The draft text was replaced by the completed text, never leaked alongside.
+    expect(JSON.stringify(after.body)).not.toContain('must not see yet');
+  });
+
   it('gives each mentor an independent review of the same learner', async () => {
     const mentorA = await createUser('shared-mentor-a', 'MENTOR');
     const mentorB = await createUser('shared-mentor-b', 'MENTOR');

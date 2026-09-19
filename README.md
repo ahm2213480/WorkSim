@@ -57,6 +57,18 @@ Two required scenarios:
 
 These are fictional companies, not real employer integrations. Their full materials and workflows are planned, not implemented.
 
+## Mentor review workflow
+
+Mentors review the work of the learners assigned to them (`MentorAssignment`, provisioned by the seed/admin only — never self-granted through the API).
+
+1. Sign in as `mentor@worksim.dev`. **Mentor reviews** (`/mentor`) lists every submission from assigned learners: learner name, simulation, submitted date, score and review status (`Not reviewed` / `Draft` / `Completed`).
+2. **Open review** (`/mentor/:submissionId`) shows the same evidence record the learner sees — the full submitted work product (root-cause write-up, code fix, test plan, estimate), the deterministic evaluation, demonstrated skills, the recorded task timeline — plus the learner's cached AI feedback, read-only.
+3. The mentor writes quality feedback and either **saves a draft** or **completes the review**. Drafts are the mentor's private working copy; completing publishes the review.
+
+The learner side is connected end to end: the evidence page (`/evidence/:submissionId`) shows a **Mentor feedback** section that displays *"Pending mentor review"* until a review is completed, then renders the mentor's written feedback and the reviewer's name. Mentor feedback never changes the deterministic score.
+
+Demo data (after `npm run db:seed`): the seeded learner's NovaShop submission carries a completed mentor review, so both the mentor queue and the learner's mentor-feedback section are populated out of the box.
+
 ## Employer evidence (Phase 7)
 
 Employers inspect candidate work evidence — what the candidate produced, how they approached it, and how they handled changing requirements. The flow:

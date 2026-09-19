@@ -19,6 +19,29 @@ export const submissionInclude = {
   },
 } as const;
 
+/** The completed human review a learner sees on their own evidence. Only
+ *  COMPLETED rows are ever returned: drafts are the mentor's private working
+ *  copy and must stay invisible to the learner until the mentor finishes. */
+export interface CompletedMentorFeedback {
+  reviewerName: string;
+  feedback: string;
+  completedAt: string;
+}
+
+export async function loadCompletedMentorFeedback(submissionId: string): Promise<CompletedMentorFeedback | null> {
+  const review = await prisma.mentorReview.findFirst({
+    where: { submissionId, status: 'COMPLETED' },
+    orderBy: { updatedAt: 'desc' },
+    include: { mentor: { select: { name: true } } },
+  });
+  if (!review) return null;
+  return {
+    reviewerName: review.mentor.name,
+    feedback: review.feedback,
+    completedAt: review.updatedAt.toISOString(),
+  };
+}
+
 export async function loadEvidence(submissionId: string): Promise<SubmissionContext> {
   const submission = await prisma.submission.findUnique({ where: { id: submissionId }, include: submissionInclude });
   if (!submission) throw new HttpError(404, 'SUBMISSION_NOT_FOUND', 'That submission does not exist.');

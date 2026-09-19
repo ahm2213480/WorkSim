@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { AdviceList } from './advice';
 import { useLocale } from '../locale';
-import { generateReview, getSubmission, readReview, type Evidence, type ReviewFeedback, type StoredAiFeedback } from '../simulations';
+import { generateReview, getSubmission, readReview, type Evidence, type MentorFeedbackView, type ReviewFeedback, type StoredAiFeedback } from '../simulations';
 
 /** Feature A UI. The deterministic evaluation above is the score of record;
  *  this section is advisory only, and its failure states never block access to
@@ -86,18 +86,20 @@ export function EvidencePage() {
   const { t, locale } = useLocale();
   // Load-key pattern: see Catalog. The stored key keeps evidence from leaking
   // across navigations while the next submission is still loading.
-  const [loaded, setLoaded] = useState<{ key: string; evidence: Evidence } | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; evidence: Evidence; mentorFeedback: MentorFeedbackView | null } | null>(null);
   const [failedFor, setFailedFor] = useState<string | null>(null);
 
   const loadKey = `${locale}:${submissionId ?? ''}`;
-  const evidence = loaded?.key === loadKey ? loaded.evidence : null;
+  const fresh = loaded?.key === loadKey ? loaded : null;
+  const evidence = fresh?.evidence ?? null;
+  const mentorFeedback = fresh?.mentorFeedback ?? null;
   const failed = failedFor === loadKey;
 
   useEffect(() => {
     if (!submissionId) return undefined;
     let active = true;
     getSubmission(submissionId, locale)
-      .then((data) => { if (active) setLoaded({ key: loadKey, evidence: data.evidence }); })
+      .then((data) => { if (active) setLoaded({ key: loadKey, evidence: data.evidence, mentorFeedback: data.mentorFeedback ?? null }); })
       .catch(() => { if (active) setFailedFor(loadKey); });
     return () => { active = false; };
   }, [submissionId, locale, loadKey]);
@@ -155,6 +157,24 @@ export function EvidencePage() {
           )}
 
           <AiReviewSection submissionId={evidence.id} />
+
+          {/* The human review. Pending state while the mentor has not completed
+              one yet; reviewer name + feedback once it exists. */}
+          <section className="ai-section" aria-labelledby="mentor-feedback-title">
+            <h2 id="mentor-feedback-title">{t.learnerMentorTitle}</h2>
+            {mentorFeedback ? (
+              <div className="advice-block">
+                <p>{mentorFeedback.feedback}</p>
+                <p className="muted">
+                  <b>{mentorFeedback.reviewerName}</b> · {t.mentorCompleted} ·{' '}
+                  {new Date(mentorFeedback.completedAt).toLocaleDateString(locale === 'ar' ? 'ar' : 'en')}
+                </p>
+              </div>
+            ) : (
+              <p className="mentor-pending" role="status"><span className="badge" aria-hidden="true">⏳</span> {t.learnerMentorPending}</p>
+            )}
+            <p className="muted">{t.learnerMentorNote}</p>
+          </section>
 
           <h2>{t.evidenceSkillsTitle}</h2>
           {evidence.skills.length === 0 ? (

@@ -98,6 +98,8 @@ footer { padding-block: 24px; border-top: 1px solid #dce4dd; color: #51635b; fon
 /* Read-only source pane in the workspace (the buggy component). */
 .code-view { margin: 10px 0 0; padding: 14px 16px; background: #f4f6f2; border: 1px solid #d3ddd0; border-radius: 10px; overflow-x: auto; }
 .code-view code { font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.55; white-space: pre; }
+/* Pending-mentor-review badge on the learner evidence page. */
+.mentor-pending { display: inline-flex; align-items: center; gap: 8px; background: #fdf6e3; border: 1px solid #e8d9a8; border-radius: 999px; padding: 6px 14px; font-size: 14px; margin: 0; }
 .workspace-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .workspace-actions .button { margin-top: 12px; }
 .inbox { list-style: none; padding: 0; display: grid; gap: 14px; }

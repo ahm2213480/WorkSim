@@ -157,7 +157,13 @@ export function submitAttempt(attemptId: string, work: Record<string, string>, l
 }
 
 export function getSubmission(submissionId: string, locale: string) {
-  return apiFetch<{ evidence: Evidence }>(withLocale(`/api/submissions/${encodeURIComponent(submissionId)}`, locale));
+  return apiFetch<{ evidence: Evidence; mentorFeedback: MentorFeedbackView | null }>(withLocale(`/api/submissions/${encodeURIComponent(submissionId)}`, locale));
+}
+
+export interface MentorFeedbackView {
+  reviewerName: string;
+  feedback: string;
+  completedAt: string;
 }
 
 // ---- AI features (advisory feedback; the server validates and caches) ------
