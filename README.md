@@ -99,6 +99,33 @@ The platform is fully bilingual (English/Arabic) with correct LTR/RTL:
 - **Server-side locale resolution**: simulation/task/material/event/rubric content is stored as parallel EN/AR columns; every read endpoint accepts `?locale=EN|AR` and ships only the requested language.
 - **Registered preference**: the account's registered language (`User.locale`, chosen at registration) is adopted automatically after login/session restore — unless the user has explicitly picked a language in that browser, which always wins.
 
+## Admin catalog (Phase 10)
+
+The ADMIN role manages the simulation catalog from `/admin` (nav link appears
+only for ADMIN accounts). All admin endpoints are gated server-side with
+`requireAuth + requireRole('ADMIN')` — the UI link is cosmetic, not the gate.
+
+What admins can do:
+
+- **View** every simulation (including inactive ones hidden from learners), with task/material/attempt counts.
+- **Create** new simulations with bilingual (EN/AR) fields; slug is validated and must be unique.
+- **Edit** simulation details (title, company, role, summary, brief, duration, ordering).
+- **Activate/deactivate** — deactivation hides the simulation from the public catalog immediately without touching data.
+- **Manage tasks**: create and edit tasks, including the submission-form fields JSON and the deterministic rubric JSON. These are validated server-side with the same parsers the evaluation path uses (`parseTaskFields`, `parseRubric`), so a bad save is a 400 to the admin — never a 500 for learners later.
+- **Manage materials**: full create/edit/delete (materials are unreferenced handouts).
+
+Safety rules:
+
+- **Simulations and tasks are never deleted through the API** — attempts and submissions reference them, and learner evidence must never be orphaned. Deactivation is the off switch.
+- **Editing a task never rewrites history**: attempts snapshot the task at start (`taskSnapshotJson`), so edits affect only future attempts.
+- Seeded simulations are republished from code on every `npm run db:seed`; a reseed overwrites database edits to seeded rows (the admin UI states this). The admin screen is for live fixes and new content.
+
+API surface (all require ADMIN, unknown ids are 404, no existence leaks):
+
+- `GET /api/admin/simulations`, `POST /api/admin/simulations`, `GET|PUT /api/admin/simulations/:id`, `PATCH /api/admin/simulations/:id/active`
+- `POST /api/admin/simulations/:id/tasks`, `GET|PUT /api/admin/tasks/:taskId`
+- `POST /api/admin/simulations/:id/materials`, `GET|PUT|DELETE /api/admin/materials/:materialId`
+
 ## Mobile workspace
 
 The simulation workspace is the mobile-first screen (the task is the product). Below 900px the two columns become a `Work / Messages / Materials` tab strip so the learner never scrolls past a long form to reach the team's messages or the task materials; above 900px both columns are visible at once, from the same markup. Task materials are expandable in place — the bug report and acceptance criteria are the task's inputs — with prose wrapping and code scrolling internally, so nothing widens the page.
